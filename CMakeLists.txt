@@ -104,6 +104,21 @@ include_directories(
 
 add_subdirectory(core)
 
+SET(LLVM_DIR "/usr/local/opt/llvm/lib/cmake/llvm/")
+SET(WAVM_ENABLE_STATIC_LINKING)
+#include(cmake/ProjectWAVM.cmake)
+
+
+
+  add_subdirectory(
+      ${CMAKE_CURRENT_SOURCE_DIR}/deps/WAVM
+      ${CMAKE_CURRENT_BINARY_DIR}/WAVM)
+
+#  target_link_libraries(embedder-example libWAVM)
+#add_subdirectory(${PROJECT_SOURCE_DIR}/deps/WAVM)
+#find_package(WAVM REQUIRED CONFIG)
+#target_link_libraries(wasm-shell WAVM::WAVM)
+
 kagome_install_setup(
     HEADER_DIRS
     core/common

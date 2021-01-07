@@ -10,6 +10,17 @@ target_link_libraries(wasm_memory_test
     binaryen_wasm_memory
     )
 
+addtest(wavm_memory_test
+    wavm_memory_test.cpp
+    )
+target_link_libraries(wavm_memory_test
+    wavm_wasm_memory
+    binaryen_wasm_memory
+    binaryen_core_api
+    basic_wasm_provider
+    extension_factory
+    )
+
 addtest(runtime_external_interface_test
     runtime_external_interface_test.cpp
     )

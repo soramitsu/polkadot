@@ -316,7 +316,7 @@ namespace kagome::injector {
             .authorities = configuration->genesis_authorities,
             .randomness = configuration->randomness};
 
-        const bool init_epoch_desc_ok =
+        [[maybe_unused]] const bool init_epoch_desc_ok =
             (*obj)->addEpochDescriptor(0, init_epoch_desc).has_value();
         BOOST_ASSERT(init_epoch_desc_ok);
       }
