@@ -360,7 +360,7 @@ namespace kagome::extensions {
      * background process and is used to parallel-verify signatures which are
      * pushed to the batch with ext_crypto_.._verify
      */
-    virtual void ext_start_batch_verify() = 0;
+    virtual void ext_crypto_start_batch_verify_version_1() = 0;
 
     /**
      * @brief Finish verifying the batch of signatures since the last call to
@@ -370,7 +370,7 @@ namespace kagome::extensions {
      * @returns an i32 integer value equal to 1 if all the signatures are valid
      * or a value equal to 0 if one or more of the signatures are invalid.
      */
-    virtual runtime::WasmSize ext_finish_batch_verify() = 0;
+    virtual runtime::WasmSize ext_crypto_finish_batch_verify_version_1() = 0;
 
     /**
      * Verify the signature over the ed25519 message
@@ -448,7 +448,8 @@ namespace kagome::extensions {
      * @return pointer-size value (pointer to buffer and its size) containing
      * scale-encoded variant of compressed public key or error
      */
-    virtual runtime::WasmSpan ext_crypto_secp256k1_ecdsa_recover_compressed_v1(
+    virtual runtime::WasmSpan
+    ext_crypto_secp256k1_ecdsa_recover_compressed_version_1(
         runtime::WasmPointer sig, runtime::WasmPointer msg) = 0;
 
     // ------------------------- Hashing extension/crypto ---------------
@@ -485,7 +486,7 @@ namespace kagome::extensions {
     /**
      * @see Extension::ext_ed25519_generate
      */
-    virtual runtime::WasmPointer ext_ed25519_generate_v1(
+    virtual runtime::WasmPointer ext_crypto_ed25519_generate_version_1(
         runtime::WasmSize key_type, runtime::WasmSpan seed) = 0;
 
     /**
@@ -499,7 +500,7 @@ namespace kagome::extensions {
     /**
      * @see Extension::ext_ed25519_verify
      */
-    virtual runtime::WasmSize ext_ed25519_verify_v1(
+    virtual runtime::WasmSize ext_crypto_ed25519_verify_version_1(
         runtime::WasmPointer sig_data,
         runtime::WasmSpan msg,
         runtime::WasmPointer pubkey_data) = 0;
@@ -507,19 +508,19 @@ namespace kagome::extensions {
     /**
      * @see Extension::ext_sr25519_public_keys
      */
-    virtual runtime::WasmSpan ext_sr25519_public_keys_v1(
+    virtual runtime::WasmSpan ext_crypto_sr25519_public_keys_version_1(
         runtime::WasmSize key_type) = 0;
 
     /**
      * @see Extension::ext_sr25519_generate
      */
-    virtual runtime::WasmPointer ext_sr25519_generate_v1(
+    virtual runtime::WasmPointer ext_crypto_sr25519_generate_version_1(
         runtime::WasmSize key_type, runtime::WasmSpan seed) = 0;
 
     /**
      * @see Extension::ext_sr25519_sign
      */
-    virtual runtime::WasmSpan ext_sr25519_sign_v1(
+    virtual runtime::WasmSpan ext_crypto_sr25519_sign_version_1(
         runtime::WasmSize key_type,
         runtime::WasmPointer key,
         runtime::WasmSpan msg_data) = 0;
@@ -527,7 +528,7 @@ namespace kagome::extensions {
     /**
      * @see Extension::ext_sr25519_verify
      */
-    virtual runtime::WasmSize ext_sr25519_verify_v1(
+    virtual runtime::WasmSize ext_crypto_sr25519_verify_version_2(
         runtime::WasmPointer sig_data,
         runtime::WasmSpan msg,
         runtime::WasmPointer pubkey_data) = 0;

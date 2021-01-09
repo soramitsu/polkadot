@@ -75,12 +75,12 @@ namespace kagome::extensions {
                         runtime::WasmPointer out_ptr);
 
     /**
-     * @see Extension::ext_start_batch_verify
+     * @see Extension::ext_crypto_start_batch_verify_version_1
      */
     void ext_start_batch_verify();
 
     /**
-     * @see Extension::ext_finish_batch_verify
+     * @see Extension::ext_crypto_finish_batch_verify_version_1
      */
     runtime::WasmSize ext_finish_batch_verify();
 
@@ -219,7 +219,7 @@ namespace kagome::extensions {
         runtime::WasmPointer sig, runtime::WasmPointer msg);
 
     /**
-     * @see Extension::ext_crypto_secp256k1_ecdsa_recover_compressed_v1
+     * @see Extension::ext_crypto_secp256k1_ecdsa_recover_compressed_version_1
      */
     runtime::WasmSpan ext_crypto_secp256k1_ecdsa_recover_compressed_v1(
         runtime::WasmPointer sig, runtime::WasmPointer msg);

@@ -249,11 +249,11 @@ namespace kagome::extensions {
     crypto_ext_->ext_keccak_256(data, len, out);
   }
 
-  void ExtensionImpl::ext_start_batch_verify() {
+  void ExtensionImpl::ext_crypto_start_batch_verify_version_1() {
     crypto_ext_->ext_start_batch_verify();
   }
 
-  runtime::WasmSize ExtensionImpl::ext_finish_batch_verify() {
+  runtime::WasmSize ExtensionImpl::ext_crypto_finish_batch_verify_version_1() {
     return crypto_ext_->ext_finish_batch_verify();
   }
 
@@ -300,7 +300,7 @@ namespace kagome::extensions {
     return crypto_ext_->ext_ed25519_public_keys_v1(key_type);
   }
 
-  runtime::WasmPointer ExtensionImpl::ext_ed25519_generate_v1(
+  runtime::WasmPointer ExtensionImpl::ext_crypto_ed25519_generate_version_1(
       runtime::WasmSize key_type, runtime::WasmSpan seed) {
     return crypto_ext_->ext_ed25519_generate_v1(key_type, seed);
   }
@@ -312,31 +312,31 @@ namespace kagome::extensions {
     return crypto_ext_->ext_ed25519_sign_v1(key_type, key, msg_data);
   }
 
-  runtime::WasmSize ExtensionImpl::ext_ed25519_verify_v1(
+  runtime::WasmSize ExtensionImpl::ext_crypto_ed25519_verify_version_1(
       runtime::WasmPointer sig_data,
       runtime::WasmSpan msg,
       runtime::WasmPointer pubkey_data) {
     return crypto_ext_->ext_ed25519_verify_v1(sig_data, msg, pubkey_data);
   }
 
-  runtime::WasmSpan ExtensionImpl::ext_sr25519_public_keys_v1(
+  runtime::WasmSpan ExtensionImpl::ext_crypto_sr25519_public_keys_version_1(
       runtime::WasmSize key_type) {
     return crypto_ext_->ext_sr25519_public_keys_v1(key_type);
   }
 
-  runtime::WasmPointer ExtensionImpl::ext_sr25519_generate_v1(
+  runtime::WasmPointer ExtensionImpl::ext_crypto_sr25519_generate_version_1(
       runtime::WasmSize key_type, runtime::WasmSpan seed) {
     return crypto_ext_->ext_sr25519_generate_v1(key_type, seed);
   }
 
-  runtime::WasmSpan ExtensionImpl::ext_sr25519_sign_v1(
+  runtime::WasmSpan ExtensionImpl::ext_crypto_sr25519_sign_version_1(
       runtime::WasmSize key_type,
       runtime::WasmPointer key,
       runtime::WasmSpan msg_data) {
     return crypto_ext_->ext_sr25519_sign_v1(key_type, key, msg_data);
   }
 
-  runtime::WasmSize ExtensionImpl::ext_sr25519_verify_v1(
+  runtime::WasmSize ExtensionImpl::ext_crypto_sr25519_verify_version_2(
       runtime::WasmPointer sig_data,
       runtime::WasmSpan msg,
       runtime::WasmPointer pubkey_data) {
@@ -401,7 +401,7 @@ namespace kagome::extensions {
   }
 
   runtime::WasmSpan
-  ExtensionImpl::ext_crypto_secp256k1_ecdsa_recover_compressed_v1(
+  ExtensionImpl::ext_crypto_secp256k1_ecdsa_recover_compressed_version_1(
       runtime::WasmPointer sig, runtime::WasmPointer msg) {
     return crypto_ext_->ext_crypto_secp256k1_ecdsa_recover_compressed_v1(sig,
                                                                          msg);

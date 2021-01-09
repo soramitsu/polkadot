@@ -13,13 +13,18 @@
 #include "WAVM/IR/Value.h"
 #include "WAVM/Runtime/Intrinsics.h"
 #include "WAVM/Runtime/Runtime.h"
-#include "WAVM/WASTParse/WASTParse.h"
 #include "WAVM/WASM/WASM.h"
+#include "WAVM/WASTParse/WASTParse.h"
 
 #include <WAVM/IR/Validate.h>
 #include <WAVM/Inline/Serialization.h>
 #include <boost/system/error_code.hpp>
+#include "extensions/extension_factory.hpp"
 #include "runtime/common/storage_wasm_provider.hpp"
+#include "runtime/trie_storage_provider.hpp"
+#include "runtime/wasm_result.hpp"
+#include "runtime/wavm/wasm_memory_impl.hpp"
+#include "scale/scale.hpp"
 
 namespace kagome::runtime::wavm {
 
@@ -27,38 +32,40 @@ namespace kagome::runtime::wavm {
    public:
     ~CoreWavm() override = default;
 
-    CoreWavm(std::shared_ptr<WasmProvider> wasm_provider)
-        : wasm_provider_{wasm_provider} {}
+    CoreWavm(std::shared_ptr<WasmProvider> wasm_provider,
+             std::shared_ptr<extensions::ExtensionFactory> extenstion_factory,
+             std::shared_ptr<TrieStorageProvider> trie_storage_provider);
 
-    WAVM::IR::Module parseModule(const common::Buffer& code) {
-      using namespace WAVM;
-      using namespace WAVM::IR;
-      using namespace WAVM::Runtime;
-
-      // first parse module
-      IR::Module moduleIR;
-
-      bool a = WASM::loadBinaryModule(code.toVector().data(), code.size(), moduleIR);
-
-      return moduleIR;
-    }
+    WAVM::Runtime::ModuleRef parseModule(const common::Buffer &code);
 
     outcome::result<primitives::Version> version(
-        const boost::optional<primitives::BlockHash> &block_hash) {
-      using namespace WAVM;
-      using namespace WAVM::IR;
-      using namespace WAVM::Runtime;
+        const boost::optional<primitives::BlockHash> &block_hash) override;
 
-      IR::Module irModule = parseModule(wasm_provider_->getStateCode());
-      std::vector<WAST::Error> wastErrors;
+    /**
+     * @brief Executes the given block
+     * @param block block to execute
+     */
+    outcome::result<void> execute_block(
+        const primitives::Block &block) override;
 
-      ModuleRef module = compileModule(irModule);
+    /**
+     * @brief Initialize a block with the given header.
+     * @param header header used for block initialization
+     */
+    outcome::result<void> initialise_block(
+        const primitives::BlockHeader &header) override;
 
-      module->
-    }
+    /**
+     * Get current authorities
+     * @return collection of authorities
+     */
+    outcome::result<std::vector<primitives::AuthorityId>> authorities(
+        const primitives::BlockId &block_id);
 
    private:
     std::shared_ptr<WasmProvider> wasm_provider_;
+    std::shared_ptr<extensions::ExtensionFactory> extenstion_factory_;
+    std::shared_ptr<TrieStorageProvider> trie_storage_provider_;
   };
 
 }  // namespace kagome::runtime::wavm

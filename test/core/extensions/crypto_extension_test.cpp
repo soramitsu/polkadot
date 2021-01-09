@@ -695,7 +695,7 @@ TEST_F(CryptoExtensionTest, Ed25519GetPublicKeysSuccess) {
 
 /**
  * @given initialized crypto extension, key type
- * @when call ext_sr25519_public_keys_v1 of crypto extension
+ * @when call ext_crypto_sr25519_public_keys_version_1 of crypto extension
  * @then we get serialized set of existing sr25519 keys
  */
 TEST_F(CryptoExtensionTest, Sr25519GetPublicKeysSuccess) {
@@ -781,7 +781,7 @@ TEST_F(CryptoExtensionTest, Ed25519SignFailure) {
 
 /**
  * @given initialized crypto extension, key type, public key value and message
- * @when call ext_sr25519_sign_v1 of crypto extension
+ * @when call ext_crypto_sr25519_sign_version_1 of crypto extension
  * @then we get a valid signature
  */
 TEST_F(CryptoExtensionTest, Sr25519SignSuccess) {
@@ -816,7 +816,7 @@ TEST_F(CryptoExtensionTest, Sr25519SignSuccess) {
 /**
  * @given initialized crypto extension,
  * key type, not existing public key and message
- * @when call ext_sr25519_sign_v1 of crypto extension
+ * @when call ext_crypto_sr25519_sign_version_1 of crypto extension
  * @then we get a valid serialized error
  */
 TEST_F(CryptoExtensionTest, Sr25519SignFailure) {

@@ -45,8 +45,8 @@ namespace kagome::runtime::binaryen {
   const static wasm::Name ext_blake2_256 = "ext_blake2_256";
   const static wasm::Name ext_keccak_256 = "ext_keccak_256";
 
-  const static wasm::Name ext_start_batch_verify = "ext_start_batch_verify";
-  const static wasm::Name ext_finish_batch_verify = "ext_finish_batch_verify";
+  const static wasm::Name ext_start_batch_verify = "ext_crypto_start_batch_verify_version_1";
+  const static wasm::Name ext_finish_batch_verify = "ext_crypto_finish_batch_verify_version_1";
 
   const static wasm::Name ext_ed25519_verify = "ext_ed25519_verify";
   const static wasm::Name ext_sr25519_verify = "ext_sr25519_verify";
@@ -319,14 +319,14 @@ namespace kagome::runtime::binaryen {
       // ext_start_batch_verify
       if (import->base == ext_start_batch_verify) {
         checkArguments(import->base.c_str(), 0, arguments.size());
-        extension_->ext_start_batch_verify();
+        extension_->ext_crypto_start_batch_verify_version_1();
         return wasm::Literal();
       }
 
       // ext_finish_batch_verify
       if (import->base == ext_start_batch_verify) {
         checkArguments(import->base.c_str(), 0, arguments.size());
-        auto res = extension_->ext_finish_batch_verify();
+        auto res = extension_->ext_crypto_finish_batch_verify_version_1();
         return wasm::Literal(res);
       }
 
@@ -387,14 +387,15 @@ namespace kagome::runtime::binaryen {
 	    // ext_crypto_start_batch_verify_version_1
 	    if (import->base == ext_crypto_start_batch_verify_version_1) {
 		    checkArguments(import->base.c_str(), 0, arguments.size());
-		    extension_->ext_start_batch_verify();
+                    extension_->ext_crypto_start_batch_verify_version_1();
 		    return wasm::Literal();
 	    }
 
 	    // ext_crypto_finish_batch_verify_version_1
 	    if (import->base == ext_crypto_finish_batch_verify_version_1) {
 		    checkArguments(import->base.c_str(), 0, arguments.size());
-		    auto res = extension_->ext_finish_batch_verify();
+		    auto res =
+                        extension_->ext_crypto_finish_batch_verify_version_1();
 		    return wasm::Literal(res);
 	    }
 
@@ -410,7 +411,7 @@ namespace kagome::runtime::binaryen {
       /// ext_crypto_ed25519_generate_version_1
       if (import->base == ext_crypto_ed25519_generate_version_1) {
         checkArguments(import->base.c_str(), 2, arguments.size());
-        auto res = extension_->ext_ed25519_generate_v1(
+        auto res = extension_->ext_crypto_ed25519_generate_version_1(
             arguments.at(0).geti32(), arguments.at(1).geti64());
         return wasm::Literal(res);
       }
@@ -427,24 +428,25 @@ namespace kagome::runtime::binaryen {
       /// ext_crypto_ed25519_verify_version_1
       if (import->base == ext_crypto_ed25519_verify_version_1) {
         checkArguments(import->base.c_str(), 3, arguments.size());
-        auto res = extension_->ext_ed25519_verify_v1(arguments.at(0).geti32(),
-                                                     arguments.at(1).geti64(),
-                                                     arguments.at(2).geti32());
+        auto res = extension_->ext_crypto_ed25519_verify_version_1(
+            arguments.at(0).geti32(),
+            arguments.at(1).geti64(),
+            arguments.at(2).geti32());
         return wasm::Literal(res);
       }
 
       /// ext_crypto_sr25519_public_keys_version_1
       if (import->base == ext_crypto_sr25519_public_keys_version_1) {
         checkArguments(import->base.c_str(), 1, arguments.size());
-        auto res =
-            extension_->ext_sr25519_public_keys_v1(arguments.at(0).geti32());
+        auto res = extension_->ext_crypto_sr25519_public_keys_version_1(
+            arguments.at(0).geti32());
         return wasm::Literal(res);
       }
 
       /// ext_crypto_sr25519_generate_version_1
       if (import->base == ext_crypto_sr25519_generate_version_1) {
         checkArguments(import->base.c_str(), 2, arguments.size());
-        auto res = extension_->ext_sr25519_generate_v1(
+        auto res = extension_->ext_crypto_sr25519_generate_version_1(
             arguments.at(0).geti32(), arguments.at(1).geti64());
         return wasm::Literal(res);
       }
@@ -452,27 +454,30 @@ namespace kagome::runtime::binaryen {
       /// ext_crypto_sr25519_sign_version_1
       if (import->base == ext_crypto_sr25519_sign_version_1) {
         checkArguments(import->base.c_str(), 3, arguments.size());
-        auto res = extension_->ext_sr25519_sign_v1(arguments.at(0).geti32(),
-                                                   arguments.at(1).geti32(),
-                                                   arguments.at(2).geti64());
+        auto res = extension_->ext_crypto_sr25519_sign_version_1(
+            arguments.at(0).geti32(),
+            arguments.at(1).geti32(),
+            arguments.at(2).geti64());
         return wasm::Literal(res);
       }
 
       /// ext_crypto_sr25519_verify_version_1
       if (import->base == ext_crypto_sr25519_verify_version_1) {
         checkArguments(import->base.c_str(), 3, arguments.size());
-        auto res = extension_->ext_sr25519_verify_v1(arguments.at(0).geti32(),
-                                                     arguments.at(1).geti64(),
-                                                     arguments.at(2).geti32());
+        auto res = extension_->ext_crypto_sr25519_verify_version_2(
+            arguments.at(0).geti32(),
+            arguments.at(1).geti64(),
+            arguments.at(2).geti32());
         return wasm::Literal(res);
       }
 
       /// ext_crypto_sr25519_verify_version_2
       if (import->base == ext_crypto_sr25519_verify_version_2) {
         checkArguments(import->base.c_str(), 3, arguments.size());
-        auto res = extension_->ext_sr25519_verify_v1(arguments.at(0).geti32(),
-                                                     arguments.at(1).geti64(),
-                                                     arguments.at(2).geti32());
+        auto res = extension_->ext_crypto_sr25519_verify_version_2(
+            arguments.at(0).geti32(),
+            arguments.at(1).geti64(),
+            arguments.at(2).geti32());
         return wasm::Literal(res);
       }
 
@@ -488,8 +493,9 @@ namespace kagome::runtime::binaryen {
       if (import->base
           == ext_crypto_secp256k1_ecdsa_recover_compressed_version_1) {
         checkArguments(import->base.c_str(), 2, arguments.size());
-        auto res = extension_->ext_crypto_secp256k1_ecdsa_recover_compressed_v1(
-            arguments.at(0).geti32(), arguments.at(1).geti32());
+        auto res =
+            extension_->ext_crypto_secp256k1_ecdsa_recover_compressed_version_1(
+                arguments.at(0).geti32(), arguments.at(1).geti32());
         return wasm::Literal(res);
       }
 

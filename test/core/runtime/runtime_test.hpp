@@ -51,7 +51,7 @@ class RuntimeTest : public ::testing::Test {
     using kagome::storage::trie::PersistentTrieBatch;
     using kagome::storage::trie::PersistentTrieBatchMock;
 
-    auto storage_provider =
+    storage_provider =
         std::make_shared<kagome::runtime::TrieStorageProviderMock>();
     ON_CALL(*storage_provider, getCurrentBatch())
         .WillByDefault(testing::Invoke(
@@ -93,7 +93,7 @@ class RuntimeTest : public ::testing::Test {
     changes_tracker_ =
         std::make_shared<kagome::storage::changes_trie::ChangesTrackerMock>();
 
-    auto extension_factory =
+    extension_factory =
         std::make_shared<kagome::extensions::ExtensionFactoryImpl>(
             changes_tracker_,
             sr25519_provider,
@@ -122,9 +122,9 @@ class RuntimeTest : public ::testing::Test {
 
     runtime_manager_ =
         std::make_shared<kagome::runtime::binaryen::RuntimeManager>(
-            std::move(extension_factory),
+            extension_factory,
             std::move(module_factory),
-            std::move(storage_provider),
+            storage_provider,
             std::move(hasher));
   }
 
@@ -167,6 +167,8 @@ class RuntimeTest : public ::testing::Test {
   std::shared_ptr<kagome::runtime::binaryen::RuntimeManager> runtime_manager_;
   std::shared_ptr<kagome::storage::changes_trie::ChangesTracker>
       changes_tracker_;
+  std::shared_ptr<kagome::runtime::TrieStorageProviderMock> storage_provider;
+  std::shared_ptr<kagome::extensions::ExtensionFactory> extension_factory;
 };
 
 #endif  // KAGOME_RUNTIME_TEST_HPP

@@ -37,6 +37,16 @@ target_link_libraries(core_integration_test
     extension_factory
     )
 
+addtest(wavm_core_integration_test
+    wavm_core_integration_test.cpp
+    )
+target_link_libraries(wavm_core_integration_test
+    core_wavm
+    binaryen_core_api
+    basic_wasm_provider
+    extension_factory
+    )
+
 addtest(tagged_transaction_queue_test
     tagged_transaction_queue_test.cpp
     )

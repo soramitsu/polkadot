@@ -157,9 +157,9 @@ namespace kagome::extensions {
                         runtime::WasmSize len,
                         runtime::WasmPointer out) override;
 
-    void ext_start_batch_verify() override;
+    void ext_crypto_start_batch_verify_version_1() override;
 
-    runtime::WasmSize ext_finish_batch_verify() override;
+    runtime::WasmSize ext_crypto_finish_batch_verify_version_1() override;
 
     runtime::WasmSize ext_ed25519_verify(
         runtime::WasmPointer msg_data,
@@ -190,29 +190,29 @@ namespace kagome::extensions {
     runtime::WasmSpan ext_ed25519_public_keys_v1(
         runtime::WasmSize key_type) override;
 
-    runtime::WasmPointer ext_ed25519_generate_v1(
+    runtime::WasmPointer ext_crypto_ed25519_generate_version_1(
         runtime::WasmSize key_type, runtime::WasmSpan seed) override;
 
     runtime::WasmSpan ext_ed25519_sign_v1(runtime::WasmSize key_type,
                                           runtime::WasmPointer key,
                                           runtime::WasmSpan msg_data) override;
 
-    runtime::WasmSize ext_ed25519_verify_v1(
+    runtime::WasmSize ext_crypto_ed25519_verify_version_1(
         runtime::WasmPointer sig_data,
         runtime::WasmSpan msg,
         runtime::WasmPointer pubkey_data) override;
 
-    runtime::WasmSpan ext_sr25519_public_keys_v1(
+    runtime::WasmSpan ext_crypto_sr25519_public_keys_version_1(
         runtime::WasmSize key_type) override;
 
-    runtime::WasmPointer ext_sr25519_generate_v1(
+    runtime::WasmPointer ext_crypto_sr25519_generate_version_1(
         runtime::WasmSize key_type, runtime::WasmSpan seed) override;
 
-    runtime::WasmSpan ext_sr25519_sign_v1(runtime::WasmSize key_type,
+    runtime::WasmSpan ext_crypto_sr25519_sign_version_1(runtime::WasmSize key_type,
                                           runtime::WasmPointer key,
                                           runtime::WasmSpan msg_data) override;
 
-    runtime::WasmSize ext_sr25519_verify_v1(
+    runtime::WasmSize ext_crypto_sr25519_verify_version_2(
         runtime::WasmPointer sig_data,
         runtime::WasmSpan msg,
         runtime::WasmPointer pubkey_data) override;
@@ -252,7 +252,7 @@ namespace kagome::extensions {
     runtime::WasmSpan ext_crypto_secp256k1_ecdsa_recover_v1(
         runtime::WasmPointer sig, runtime::WasmPointer msg) override;
 
-    runtime::WasmSpan ext_crypto_secp256k1_ecdsa_recover_compressed_v1(
+    runtime::WasmSpan ext_crypto_secp256k1_ecdsa_recover_compressed_version_1(
         runtime::WasmPointer sig, runtime::WasmPointer msg) override;
 
    private:
