@@ -11,6 +11,7 @@
 #include "mock/core/blockchain/block_header_repository_mock.hpp"
 #include "mock/core/storage/trie/trie_storage_mock.hpp"
 #include "runtime/wavm/core.hpp"
+#include "runtime/wavm/wasm_memory_impl.hpp"
 
 using kagome::blockchain::BlockHeaderRepositoryMock;
 using kagome::common::Buffer;
@@ -38,7 +39,9 @@ class CoreTest : public RuntimeTest {
     core_ = std::make_shared<CoreWavm>(
         wasm_provider_,
         extension_factory,
-        storage_provider);
+        storage_provider,
+        changes_tracker_,
+        std::make_shared<BlockHeaderRepositoryMock>());
   }
 
  protected:
@@ -53,5 +56,8 @@ class CoreTest : public RuntimeTest {
 TEST_F(CoreTest, VersionTest) {
   auto version_res = core_->version(boost::none);
   ASSERT_TRUE(version_res);
+  std::cerr << "\n 1st done" << std::endl;
+  auto version_res2 = core_->version(boost::none);
+  ASSERT_EQ(version_res.value(), version_res2.value());
   FAIL() << version_res.value().impl_name;
 }

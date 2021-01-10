@@ -12,14 +12,30 @@ target_link_libraries(wavm_external_interface
     logger
     )
 
+add_library(wavm_module_provider
+    module_provider.cpp
+    )
+target_link_libraries(wavm_module_provider
+    libWAVM
+    buffer
+    blob
+    logger
+    scale
+    wavm_wasm_memory
+    )
+
+add_library(wavm_runtime_api
+    wavm_runtime_api.cpp
+    )
+target_link_libraries(wavm_runtime_api
+    wavm_module_provider
+    )
+
 add_library(core_wavm
     core.cpp
     )
 target_link_libraries(core_wavm
-    buffer
-    libWAVM
-    scale
-    wavm_wasm_memory
+    wavm_runtime_api
     )
 
 add_library(wavm_wasm_memory

@@ -92,6 +92,7 @@
 #include "runtime/binaryen/runtime_api/tagged_transaction_queue_impl.hpp"
 #include "runtime/common/storage_wasm_provider.hpp"
 #include "runtime/common/trie_storage_provider_impl.hpp"
+#include "runtime/wavm/core.hpp"
 #include "storage/changes_trie/impl/storage_changes_tracker_impl.hpp"
 #include "storage/leveldb/leveldb.hpp"
 #include "storage/predefined_keys.hpp"
@@ -825,7 +826,7 @@ namespace kagome::injector {
         di::bind<runtime::OffchainWorker>.template to<runtime::binaryen::OffchainWorkerImpl>(),
         di::bind<runtime::Metadata>.template to<runtime::binaryen::MetadataImpl>(),
         di::bind<runtime::GrandpaApi>.template to<runtime::binaryen::GrandpaApiImpl>(),
-        di::bind<runtime::Core>.template to<runtime::binaryen::CoreImpl>(),
+        di::bind<runtime::Core>.template to<runtime::wavm::CoreWavm>(),
         di::bind<runtime::BabeApi>.template to<runtime::binaryen::BabeApiImpl>(),
         di::bind<runtime::BlockBuilder>.template to<runtime::binaryen::BlockBuilderImpl>(),
         di::bind<runtime::TrieStorageProvider>.template to<runtime::TrieStorageProviderImpl>(),
