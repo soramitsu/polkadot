@@ -36,7 +36,8 @@ target_link_libraries(application_injector
     sr25519_provider
     configuration_storage
     binaryen_core_api
-    core_wavm
+#    core_wavm
+    libWAVM
     binaryen_babe_api
     binaryen_grandpa_api
     binaryen_block_builder_api
