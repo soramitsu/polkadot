@@ -438,7 +438,7 @@ namespace kagome::extensions {
      * @return pointer-size value (pointer to buffer and its size) containing
      * scale-encoded variant of public key or error
      */
-    virtual runtime::WasmSpan ext_crypto_secp256k1_ecdsa_recover_v1(
+    virtual runtime::WasmSpan ext_crypto_secp256k1_ecdsa_recover_version_1(
         runtime::WasmPointer sig, runtime::WasmPointer msg) = 0;
 
     /**

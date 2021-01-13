@@ -9,6 +9,7 @@
 #include "runtime/wasm_provider.hpp"
 #include "extensions/extension_factory.hpp"
 #include "runtime/trie_storage_provider.hpp"
+#include "common/logger.hpp"
 
 namespace kagome::runtime::wavm {
 
@@ -41,6 +42,7 @@ namespace kagome::runtime::wavm {
     std::shared_ptr<WasmProvider> wasm_provider_;
     std::shared_ptr<extensions::ExtensionFactory> extension_factory_;
     std::shared_ptr<TrieStorageProvider> trie_storage_provider_;
+    common::Logger logger_;
   };
 
 }  // namespace kagome::runtime::wavm

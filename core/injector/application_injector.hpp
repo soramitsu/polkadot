@@ -94,7 +94,8 @@
 #include "runtime/binaryen/runtime_api/tagged_transaction_queue_impl.hpp"
 #include "runtime/common/storage_wasm_provider.hpp"
 #include "runtime/common/trie_storage_provider_impl.hpp"
-//#include "runtime/wavm/core.hpp"
+#include "runtime/wavm/core.hpp"
+#include "runtime/wavm/grandpa_api.hpp"
 #include "storage/changes_trie/impl/storage_changes_tracker_impl.hpp"
 #include "storage/leveldb/leveldb.hpp"
 #include "storage/predefined_keys.hpp"
@@ -259,26 +260,27 @@ namespace kagome::injector {
     const auto &trie_storage =
         injector.template create<sptr<storage::trie::TrieStorage>>();
 
+    auto grandpa_api =
+        injector.template create<sptr<runtime::GrandpaApi>>();
+    const auto &weighted_authorities_res = grandpa_api->authorities(
+        primitives::BlockId(primitives::BlockNumber{0}));
+    BOOST_ASSERT_MSG(weighted_authorities_res,
+                     "grandpa_api_->authorities failed");
+    const auto &weighted_authorities = weighted_authorities_res.value();
+
+    for (const auto authority : weighted_authorities) {
+      spdlog::info("Grandpa authority: {}", authority.id.id.toHex());
+    }
+
     auto storage = blockchain::KeyValueBlockStorage::create(
         trie_storage->getRootHash(),
         db,
         hasher,
-        [&db, &injector](const primitives::Block &genesis_block) {
+        [&db, &weighted_authorities](const primitives::Block &genesis_block) {
           // handle genesis initialization, which happens when there is not
           // authorities and last completed round in the storage
           if (not db->get(storage::kAuthoritySetKey)) {
             // insert authorities
-            auto grandpa_api =
-                injector.template create<sptr<runtime::GrandpaApi>>();
-            const auto &weighted_authorities_res = grandpa_api->authorities(
-                primitives::BlockId(primitives::BlockNumber{0}));
-            BOOST_ASSERT_MSG(weighted_authorities_res,
-                             "grandpa_api_->authorities failed");
-            const auto &weighted_authorities = weighted_authorities_res.value();
-
-            for (const auto authority : weighted_authorities) {
-              spdlog::info("Grandpa authority: {}", authority.id.id.toHex());
-            }
 
             consensus::grandpa::VoterSet voters{0};
             for (const auto &weighted_authority : weighted_authorities) {
@@ -850,8 +852,8 @@ namespace kagome::injector {
         di::bind<runtime::ParachainHost>.template to<runtime::binaryen::ParachainHostImpl>(),
         di::bind<runtime::OffchainWorker>.template to<runtime::binaryen::OffchainWorkerImpl>(),
         di::bind<runtime::Metadata>.template to<runtime::binaryen::MetadataImpl>(),
-        di::bind<runtime::GrandpaApi>.template to<runtime::binaryen::GrandpaApiImpl>(),
-        di::bind<runtime::Core>.template to<runtime::binaryen::CoreImpl>(),
+        di::bind<runtime::GrandpaApi>.template to<runtime::wavm::GrandpaApiWavm>(),
+        di::bind<runtime::Core>.template to<runtime::wavm::CoreWavm>(),
         di::bind<runtime::BabeApi>.template to<runtime::binaryen::BabeApiImpl>(),
         di::bind<runtime::BlockBuilder>.template to<runtime::binaryen::BlockBuilderImpl>(),
         di::bind<runtime::TrieStorageProvider>.template to<runtime::TrieStorageProviderImpl>(),

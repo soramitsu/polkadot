@@ -76,6 +76,13 @@ namespace kagome::runtime::wavm {
   }
 
   WAVM_DEFINE_INTRINSIC_FUNCTION(env,
+                                "ext_crypto_secp256k1_ecdsa_recover_version_1",
+                                I64,
+                                ext_crypto_secp256k1_ecdsa_recover_version_1, I32 sig, I32 msg) {
+    return st.top()->ext_crypto_secp256k1_ecdsa_recover_version_1(sig, msg);
+  }
+
+  WAVM_DEFINE_INTRINSIC_FUNCTION(env,
                                  "ext_crypto_secp256k1_ecdsa_recover_compressed_version_1",
                                  I64,
                                  ext_crypto_secp256k1_ecdsa_recover_compressed_version_1, I32 sig, I32 msg) {

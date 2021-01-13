@@ -484,7 +484,7 @@ namespace kagome::runtime::binaryen {
       /// ext_crypto_secp256k1_ecdsa_recover_version_1
       if (import->base == ext_crypto_secp256k1_ecdsa_recover_version_1) {
         checkArguments(import->base.c_str(), 2, arguments.size());
-        auto res = extension_->ext_crypto_secp256k1_ecdsa_recover_v1(
+        auto res = extension_->ext_crypto_secp256k1_ecdsa_recover_version_1(
             arguments.at(0).geti32(), arguments.at(1).geti32());
         return wasm::Literal(res);
       }

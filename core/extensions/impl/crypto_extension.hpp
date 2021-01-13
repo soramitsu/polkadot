@@ -213,7 +213,7 @@ namespace kagome::extensions {
                                             runtime::WasmPointer pubkey_data);
 
     /**
-     * @see Extension::ext_crypto_secp256k1_ecdsa_recover_v1
+     * @see Extension::ext_crypto_secp256k1_ecdsa_recover_version_1
      */
     runtime::WasmSpan ext_crypto_secp256k1_ecdsa_recover_v1(
         runtime::WasmPointer sig, runtime::WasmPointer msg);

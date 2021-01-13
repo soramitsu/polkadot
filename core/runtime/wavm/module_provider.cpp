@@ -15,14 +15,13 @@
 #include "WAVM/Inline/HashMap.h"
 #include "WAVM/Inline/Timing.h"
 #include "WAVM/LLVMJIT/LLVMJIT.h"
-#include "WAVM/Runtime/Runtime.h"
 #include "WAVM/Platform/Intrinsic.h"
 #include "WAVM/Platform/RWMutex.h"
+#include "WAVM/Runtime/Runtime.h"
 #include "WAVM/WASM/WASM.h"
 
 #include "runtime/wavm/wasm_memory_impl.hpp"
 #include "runtime/wavm/wavm_external_interface.hpp"
-//#include "crypto/hasher/hasher_impl.hpp"
 
 namespace kagome::runtime::wavm {
 
@@ -35,17 +34,19 @@ namespace kagome::runtime::wavm {
       std::shared_ptr<TrieStorageProvider> trie_storage_provider)
       : wasm_provider_{wasm_provider},
         extension_factory_{extension_factory},
-        trie_storage_provider_{trie_storage_provider} {}
+        trie_storage_provider_{trie_storage_provider},
+        logger_{common::createLogger("Module provider")} {}
 
-  WAVM::Runtime::ModuleRef parseModule(
-      const common::Buffer &code) {
+  WAVM::Runtime::ModuleRef parseModule(const common::Buffer &code) {
     using namespace WAVM;
     using namespace WAVM::IR;
     using namespace WAVM::Runtime;
 
     auto code_hash = Hash<std::vector<uint8_t>>{}(code.toVector());
-//    auto code_hash = hasher_->twox_64(code.toVector());
-    if (not latest_precompiled_module_ or latest_code_hash_.value() != code_hash){
+    //    auto code_hash = hasher_->twox_64(code.toVector());
+    if (not latest_precompiled_module_
+        or latest_code_hash_.value() != code_hash) {
+      spdlog::info("Precompiling a module...");
       // first parse module
       IR::Module moduleIR;
 
@@ -128,6 +129,59 @@ namespace kagome::runtime::wavm {
     // clang-format on
   }
 
+  WAVM::Runtime::ImportBindings getPolkadotImports(
+      WAVM::Runtime::Instance *intrinsicsInstance) {
+    using namespace WAVM;
+    using namespace WAVM::IR;
+    using namespace WAVM::Runtime;
+
+    using vt = ValueType;
+    // clang-format off
+    return {
+        asObject(getTypedInstanceExport(intrinsicsInstance, "memory", MemoryType(false, IndexType::i32, SizeConstraints{20, UINT64_MAX}))),
+        asObject(getTypedInstanceExport(intrinsicsInstance, "ext_logging_log_version_1", {TypeTuple{}, {vt::i32, vt::i64, vt::i64}})),
+        asObject(getTypedInstanceExport(intrinsicsInstance, "ext_hashing_twox_128_version_1", {{vt::i32}, {vt::i64}})),
+        asObject(getTypedInstanceExport(intrinsicsInstance, "ext_hashing_twox_64_version_1", {{vt::i32}, {vt::i64}})),
+        asObject(getTypedInstanceExport(intrinsicsInstance, "ext_storage_set_version_1", {TypeTuple{}, {vt::i64, vt::i64}})),
+        asObject(getTypedInstanceExport(intrinsicsInstance, "ext_storage_clear_version_1", {TypeTuple{}, {vt::i64}})),
+        asObject(getTypedInstanceExport(intrinsicsInstance, "ext_hashing_blake2_128_version_1", {{vt::i32}, {vt::i64}})),
+        asObject(getTypedInstanceExport(intrinsicsInstance, "ext_storage_clear_prefix_version_1", {TypeTuple{}, {vt::i64}})),
+        asObject(getTypedInstanceExport(intrinsicsInstance, "ext_storage_get_version_1", {{vt::i64}, {vt::i64}})),
+        asObject(getTypedInstanceExport(intrinsicsInstance, "ext_misc_print_utf8_version_1", {TypeTuple{}, {vt::i64}})),
+        asObject(getTypedInstanceExport(intrinsicsInstance, "ext_offchain_random_seed_version_1", {{vt::i32}, TypeTuple{}})),
+        asObject(getTypedInstanceExport(intrinsicsInstance, "ext_misc_print_hex_version_1", {TypeTuple{}, {vt::i64}})),
+        asObject(getTypedInstanceExport(intrinsicsInstance, "ext_crypto_start_batch_verify_version_1", {TypeTuple{}, TypeTuple{}})),
+        asObject(getTypedInstanceExport(intrinsicsInstance, "ext_crypto_finish_batch_verify_version_1", {{vt::i32}, TypeTuple{}})),
+        asObject(getTypedInstanceExport(intrinsicsInstance, "ext_offchain_is_validator_version_1", {{vt::i32}, TypeTuple{}})),
+        asObject(getTypedInstanceExport(intrinsicsInstance, "ext_offchain_local_storage_get_version_1", {{vt::i64}, {vt::i32, vt::i64}})),
+        asObject(getTypedInstanceExport(intrinsicsInstance, "ext_offchain_local_storage_compare_and_set_version_1", {{vt::i32}, {vt::i32, vt::i64, vt::i64, vt::i64}})),
+        asObject(getTypedInstanceExport(intrinsicsInstance, "ext_hashing_blake2_256_version_1", {{vt::i32}, {vt::i64}})),
+        asObject(getTypedInstanceExport(intrinsicsInstance, "ext_hashing_keccak_256_version_1", {{vt::i32}, {vt::i64}})),
+        asObject(getTypedInstanceExport(intrinsicsInstance, "ext_crypto_ed25519_verify_version_1", {{vt::i32}, {vt::i32, vt::i64, vt::i32}})),
+        asObject(getTypedInstanceExport(intrinsicsInstance, "ext_misc_runtime_version_version_1", {{vt::i64}, {vt::i64}})),
+        asObject(getTypedInstanceExport(intrinsicsInstance, "ext_storage_append_version_1", {TypeTuple{}, {vt::i64, vt::i64}})),
+        asObject(getTypedInstanceExport(intrinsicsInstance, "ext_storage_next_key_version_1", {{vt::i64}, {vt::i64}})),
+        asObject(getTypedInstanceExport(intrinsicsInstance, "ext_misc_print_num_version_1", {TypeTuple{}, {vt::i64}})),
+        asObject(getTypedInstanceExport(intrinsicsInstance, "ext_crypto_sr25519_verify_version_2", {{vt::i32}, {vt::i32, vt::i64, vt::i32}})),
+        asObject(getTypedInstanceExport(intrinsicsInstance, "ext_offchain_local_storage_set_version_1", {TypeTuple{}, {vt::i32, vt::i64, vt::i64}})),
+        asObject(getTypedInstanceExport(intrinsicsInstance, "ext_storage_root_version_1", {{vt::i64}, TypeTuple{}})),
+        asObject(getTypedInstanceExport(intrinsicsInstance, "ext_storage_changes_root_version_1", {{vt::i64}, {vt::i64}})),
+        asObject(getTypedInstanceExport(intrinsicsInstance, "ext_trie_blake2_256_ordered_root_version_1", {{vt::i32}, {vt::i64}})),
+        asObject(getTypedInstanceExport(intrinsicsInstance, "ext_crypto_ed25519_generate_version_1", {{vt::i32}, {vt::i32, vt::i64}})),
+        asObject(getTypedInstanceExport(intrinsicsInstance, "ext_crypto_secp256k1_ecdsa_recover_version_1", {{vt::i64}, {vt::i32, vt::i32}})),
+        asObject(getTypedInstanceExport(intrinsicsInstance, "ext_crypto_secp256k1_ecdsa_recover_compressed_version_1", {{vt::i64}, {vt::i32, vt::i32}})),
+        asObject(getTypedInstanceExport(intrinsicsInstance, "ext_crypto_sr25519_generate_version_1", {{vt::i32}, {vt::i32, vt::i64}})),
+        asObject(getTypedInstanceExport(intrinsicsInstance, "ext_crypto_sr25519_public_keys_version_1", {{vt::i64}, {vt::i32}})),
+        asObject(getTypedInstanceExport(intrinsicsInstance, "ext_crypto_sr25519_sign_version_1", {{vt::i64}, {vt::i32, vt::i32, vt::i64}})),
+        asObject(getTypedInstanceExport(intrinsicsInstance, "ext_offchain_network_state_version_1", {{vt::i64}, TypeTuple{}})),
+        asObject(getTypedInstanceExport(intrinsicsInstance, "ext_offchain_submit_transaction_version_1", {{vt::i64}, {vt::i64}})),
+        asObject(getTypedInstanceExport(intrinsicsInstance, "ext_storage_read_version_1", {{vt::i64}, {vt::i64, vt::i64, vt::i32}})),
+        asObject(getTypedInstanceExport(intrinsicsInstance, "ext_allocator_malloc_version_1", {{vt::i32}, {vt::i32}})),
+        asObject(getTypedInstanceExport(intrinsicsInstance, "ext_allocator_free_version_1", {TypeTuple{}, {vt::i32}})),
+    };
+    // clang-format on
+  }
+
   outcome::result<std::vector<uint8_t>> ModuleProvider::execute(
       std::string_view name,
       const boost::optional<common::Hash256> &state_root,
@@ -150,7 +204,7 @@ namespace kagome::runtime::wavm {
     // Instantiate the WASM module using the intrinsic function as its import.
     const FunctionType i32_to_void({}, {ValueType::i32});
     GCPointer<Instance> instance = instantiateModule(
-        compartment, module, getImports(intrinsicsInstance), "hello");
+        compartment, module, getPolkadotImports(intrinsicsInstance), "hello");
     WAVM::Runtime::Memory *raw_memory = getDefaultMemory(instance);
     //    WAVM::Runtime::Memory *raw_memory = getTypedInstanceExport(
     //        instance,
@@ -177,7 +231,22 @@ namespace kagome::runtime::wavm {
 
     std::shared_ptr<extensions::Extension> extension =
         extension_factory_->createExtension(memory, trie_storage_provider_);
-    [[maybe_unused]] auto a = trie_storage_provider_->setToEphemeral();
+    switch (persistency) {
+      case CallPersistency::PERSISTENT: {
+        [[maybe_unused]] auto a =
+            state_root
+                ? trie_storage_provider_->setToPersistentAt(state_root.value())
+                : trie_storage_provider_->setToPersistent();
+        break;
+      }
+      case CallPersistency::EPHEMERAL: {
+        [[maybe_unused]] auto b =
+            state_root
+                ? trie_storage_provider_->setToEphemeralAt(state_root.value())
+                : trie_storage_provider_->setToEphemeral();
+        break;
+      }
+    }
     WavmInterfaceKeeper keeper{extension};
 
     invokeFunction(
@@ -188,10 +257,12 @@ namespace kagome::runtime::wavm {
       auto result_buf = memory->loadN(r.address, r.length);
 
       memory->reset();
+      extension->reset();
       return result_buf.toVector();
     }
 
     memory->reset();
+    extension->reset();
     return std::vector<uint8_t>{};
   }
 

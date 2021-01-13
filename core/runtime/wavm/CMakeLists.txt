@@ -38,6 +38,13 @@ target_link_libraries(core_wavm
     wavm_runtime_api
     )
 
+add_library(grandpa_api_wavm
+    grandpa_api.cpp
+    )
+target_link_libraries(grandpa_api_wavm
+    wavm_runtime_api
+    )
+
 add_library(wavm_wasm_memory
     wasm_memory_impl.cpp
     )

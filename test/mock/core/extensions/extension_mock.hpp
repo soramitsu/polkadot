@@ -239,7 +239,7 @@ namespace kagome::extensions {
                                    runtime::WasmSpan msg,
                                    runtime::WasmPointer pubkey_data));
 
-    MOCK_METHOD2(ext_crypto_secp256k1_ecdsa_recover_v1,
+    MOCK_METHOD2(ext_crypto_secp256k1_ecdsa_recover_version_1,
                  runtime::WasmSpan(runtime::WasmPointer sig,
                                    runtime::WasmPointer msg));
 
