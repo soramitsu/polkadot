@@ -170,7 +170,6 @@ namespace kagome::runtime::binaryen {
 
   wasm::Literal RuntimeExternalInterface::callImport(
       wasm::Function *import, wasm::LiteralList &arguments) {
-    logger_->trace("Call import {}", import->base);
     // TODO(kamilsa): PRE-359 Replace ifs with switch case
     if (import->module == env) {
       /// memory externals
@@ -707,9 +706,9 @@ namespace kagome::runtime::binaryen {
       /// ext_misc_runtime_version_version_1
       if (import->base == ext_misc_runtime_version_version_1) {
         checkArguments(import->base.c_str(), 1, arguments.size());
-        host_api_->ext_misc_runtime_version_version_1(
-            arguments.at(0).geti64());
-        return wasm::Literal();
+        auto res = host_api_->ext_misc_runtime_version_version_1(
+            arguments.at(0).geti64()).combine();
+        return wasm::Literal(res);
       }
 
       // TODO(xDimon): It is temporary suppress fails at calling of

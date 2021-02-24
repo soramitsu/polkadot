@@ -51,6 +51,8 @@ namespace kagome::runtime::binaryen {
 
     outcome::result<RuntimeEnvironment> makeEphemeral() override;
 
+    void setIsolatedCode(const common::Buffer& code) override;
+
     outcome::result<RuntimeEnvironment> makeIsolatedAt(
         const storage::trie::RootHash &state_root) override;
 
@@ -84,6 +86,7 @@ namespace kagome::runtime::binaryen {
 
     std::mutex modules_mutex_;
     std::map<common::Hash256, std::shared_ptr<WasmModule>> modules_;
+    common::Buffer isolated_code_;
 
     static thread_local std::shared_ptr<RuntimeExternalInterface>
         external_interface_;

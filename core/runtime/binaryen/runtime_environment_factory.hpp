@@ -8,6 +8,10 @@
 
 #include "storage/trie/types.hpp"
 
+namespace kagome::common {
+  class Buffer;
+}
+
 namespace kagome::runtime::binaryen {
 
   class RuntimeEnvironment;
@@ -27,6 +31,8 @@ namespace kagome::runtime::binaryen {
     virtual outcome::result<RuntimeEnvironment> makePersistent() = 0;
 
     virtual outcome::result<RuntimeEnvironment> makeEphemeral() = 0;
+
+    virtual void setIsolatedCode(const kagome::common::Buffer& code) = 0;
 
     virtual outcome::result<RuntimeEnvironment> makeIsolatedAt(
         const storage::trie::RootHash &state_root) = 0;

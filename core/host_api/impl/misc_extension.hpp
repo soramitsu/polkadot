@@ -14,6 +14,7 @@
 #include "outcome/outcome.hpp"
 #include "runtime/types.hpp"
 #include "runtime/wasm_result.hpp"
+#include "runtime/binaryen/runtime_environment_factory.hpp"
 
 namespace kagome::runtime {
   class WasmMemory;
@@ -21,7 +22,6 @@ namespace kagome::runtime {
   class WasmProvider;
 
   namespace binaryen {
-    class RuntimeEnvironmentFactory;
     class CoreFactory;
   }  // namespace binaryen
 }  // namespace kagome::runtime

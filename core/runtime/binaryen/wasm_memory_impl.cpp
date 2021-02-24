@@ -39,7 +39,6 @@ namespace kagome::runtime::binaryen {
       size_ = offset_;
       resize(size_);
     }
-    logger_->trace("Memory reset");
   }
 
   WasmSize WasmMemoryImpl::size() const {

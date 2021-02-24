@@ -142,9 +142,18 @@ TEST_F(Primitives, EncodeBlockSuccess) {
  * @then obtained result equal to predefined match
  */
 TEST_F(Primitives, EncodeVersionSuccess) {
-  EXPECT_OUTCOME_TRUE(val, encode(version_));
-  EXPECT_OUTCOME_TRUE(decoded_version, decode<Version>(val));
-  ASSERT_EQ(decoded_version, version_);
+  auto kagome_encoded = kagome::common::Buffer::fromHex("20706f6c6b61646f743c7061726974792d706f6c6b61646f7400000000000000000000000030df6acb689907609b0300000037e397fc7c91f5e40100000040fe3ad401f8959a04000000d2bc9897eed08f1502000000f78b278be53f454c02000000af2c0297a23e6d3d03000000ed99c5acb25eedf502000000cbca25e39f14238702000000687ad44ad37f03c201000000ab3c0572291feb8b01000000bc9d89904f5b923f0100000037c8bb1350a9a2a80100000000000000").value();
+  auto smol_encoded = kagome::common::Buffer::fromHex("20706f6c6b61646f743c7061726974792d706f6c6b61646f7400000000010000000000000030df6acb689907609b0300000037e397fc7c91f5e40100000040fe3ad401f8959a04000000d2bc9897eed08f1502000000f78b278be53f454c02000000af2c0297a23e6d3d03000000ed99c5acb25eedf502000000cbca25e39f14238702000000687ad44ad37f03c201000000ab3c0572291feb8b01000000bc9d89904f5b923f0100000037c8bb1350a9a2a80100000000000000").value();
+
+  auto kagome = decode<Version>(kagome_encoded).value();
+  auto smol = decode<Version>(smol_encoded).value();
+  EXPECT_EQ(kagome.impl_name, smol.impl_name);
+  EXPECT_EQ(kagome.impl_version, smol.impl_version);
+  EXPECT_EQ(kagome.apis, smol.apis);
+  EXPECT_EQ(kagome.authoring_version, smol.authoring_version);
+  EXPECT_EQ(kagome.spec_name, smol.spec_name);
+  EXPECT_EQ(kagome.spec_version, smol.spec_version);
+  EXPECT_EQ(kagome.transaction_version, smol.transaction_version);
 }
 
 /// BlockId

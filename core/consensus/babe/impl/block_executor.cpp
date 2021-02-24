@@ -339,12 +339,22 @@ namespace kagome::consensus {
 
     auto t_end = std::chrono::high_resolution_clock::now();
 
+    static auto avg_time = 0;
+    static auto time_entries_num = 0;
+
+    auto exec_time =
+        std::chrono::duration_cast<std::chrono::milliseconds>(t_end - t_start)
+            .count();
+
+    time_entries_num++;
+    avg_time = avg_time + ((exec_time - avg_time)/time_entries_num);
+
     logger_->info(
-        "Imported block with number: {}, hash: {} within {} ms",
+        "Imported block with number: {}, hash: {} within {} ms, avg {} ms",
         block.header.number,
         block_hash.toHex(),
-        std::chrono::duration_cast<std::chrono::milliseconds>(t_end - t_start)
-            .count());
+        exec_time,
+        avg_time);
     return outcome::success();
   }
 

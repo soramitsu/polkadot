@@ -95,10 +95,6 @@ namespace kagome::host_api {
     if (not data) {
       return 0;
     }
-    if (not data.value().empty())
-      logger_->trace("ext_get_allocated_storage. Key hex: {} Value hex {}",
-                     key.toHex(),
-                     data.value().toHex());
 
     auto data_ptr = memory_->allocate(length);
 
@@ -121,18 +117,9 @@ namespace kagome::host_api {
     auto key = memory_->loadN(key_data, key_length);
     auto data = get(key, value_offset, value_length);
     if (not data) {
-      logger_->trace("ext_get_storage_into. Val by key {} not found",
-                     key.toHex());
       return runtime::WasmMemory::kMaxMemorySize;
     }
-    if (not data.value().empty()) {
-      logger_->trace("ext_get_storage_into. Key hex: {} , Value hex {}",
-                     key.toHex(),
-                     data.value().toHex());
-    } else {
-      logger_->trace("ext_get_storage_into. Key hex: {} Value: empty",
-                     key.toHex());
-    }
+
     memory_->storeBuffer(value_data, data.value());
     return data.value().size();
   }
@@ -162,20 +149,6 @@ namespace kagome::host_api {
                                          runtime::WasmSize value_length) {
     auto key = memory_->loadN(key_data, key_length);
     auto value = memory_->loadN(value_data, value_length);
-
-    if (value.toHex().size() < 500) {
-      logger_->trace(
-          "Set storage. Key: {}, Key hex: {} Value: {}, Value hex {}",
-          key.toString(),
-          key.toHex(),
-          value.toString(),
-          value.toHex());
-    } else {
-      logger_->trace(
-          "Set storage. Key: {}, Key hex: {} Value is too big to display",
-          key.toString(),
-          key.toHex());
-    }
 
     auto batch = storage_provider_->getCurrentBatch();
     auto put_result = batch->put(key, value);
@@ -323,19 +296,6 @@ namespace kagome::host_api {
 
     auto result = get(key_buffer);
     auto option = result ? boost::make_optional(result.value()) : boost::none;
-
-    if (option) {
-      logger_->trace("ext_storage_get_version_1( {} ) => {}",
-                     key_buffer.toHex(),
-                     option.value().empty() ? "empty" : option.value().toHex());
-
-    } else {
-      logger_->trace(
-          "ext_storage_get_version_1( {} ) => value was not obtained. Reason: "
-          "{}",
-          key_buffer.toHex(),
-          result.error().message());
-    }
 
     return memory_->storeBuffer(scale::encode(option).value());
   }

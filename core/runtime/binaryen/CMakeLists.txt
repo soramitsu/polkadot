@@ -54,6 +54,7 @@ add_library(binaryen_runtime_environment_factory
     runtime_environment_factory_impl.cpp
     )
 target_link_libraries(binaryen_runtime_environment_factory
+    buffer
     binaryen_runtime_environment
     binaryen_wasm_module
     binaryen_runtime_external_interface
