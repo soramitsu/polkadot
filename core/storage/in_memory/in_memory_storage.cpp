@@ -10,7 +10,18 @@
 
 using kagome::common::Buffer;
 
+constexpr const char *kInMemoryDbSizeGaugeName = "kagome_in_memory_db_size";
+
 namespace kagome::storage {
+
+  InMemoryStorage::InMemoryStorage() {
+    registry_->registerGaugeFamily(kInMemoryDbSizeGaugeName,
+                                   "In-memory database size");
+    in_memory_db_size_ = registry_->registerGaugeMetric(
+        kInMemoryDbSizeGaugeName, {{"category", "memory"}, {"units", "Bytes"}});
+    in_memory_db_index_size_ = registry_->registerGaugeMetric(
+        kInMemoryDbSizeGaugeName, {{"category", "index"}, {"units", ""}});
+  }
 
   outcome::result<Buffer> InMemoryStorage::get(const Buffer &key) const {
     if (storage.find(key.toHex()) != storage.end()) {
@@ -22,12 +33,24 @@ namespace kagome::storage {
 
   outcome::result<void> InMemoryStorage::put(const Buffer &key,
                                              const Buffer &value) {
+    if (storage.find(key.toHex()) == storage.end()) {
+      in_memory_db_index_size_->inc();
+      in_memory_db_size_->inc(key.toHex().size() + value.size());
+    } else {
+      in_memory_db_size_->inc(value.size());
+    }
     storage[key.toHex()] = value;
     return outcome::success();
   }
 
   outcome::result<void> InMemoryStorage::put(const Buffer &key,
                                              Buffer &&value) {
+    if (storage.find(key.toHex()) == storage.end()) {
+      in_memory_db_index_size_->inc();
+      in_memory_db_size_->inc(key.toHex().size() + value.size());
+    } else {
+      in_memory_db_size_->inc(value.size());
+    }
     storage[key.toHex()] = std::move(value);
     return outcome::success();
   }
@@ -41,6 +64,10 @@ namespace kagome::storage {
   }
 
   outcome::result<void> InMemoryStorage::remove(const Buffer &key) {
+    if (storage.find(key.toHex()) != storage.end()) {
+      in_memory_db_index_size_->dec();
+      in_memory_db_size_->dec(key.toHex().size() + storage[key.toHex()].size());
+    }
     storage.erase(key.toHex());
     return outcome::success();
   }

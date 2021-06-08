@@ -27,7 +27,7 @@ namespace kagome::host_api {
       : storage_provider_(std::move(storage_provider)),
         memory_(std::move(memory)),
         changes_tracker_{std::move(changes_tracker)},
-        logger_{log::createLogger("StorageExtension", "extentions")} {
+        logger_{log::createLogger("StorageExtension", "host_api")} {
     BOOST_ASSERT_MSG(storage_provider_ != nullptr, "storage batch is nullptr");
     BOOST_ASSERT_MSG(memory_ != nullptr, "memory is nullptr");
     BOOST_ASSERT_MSG(changes_tracker_ != nullptr, "changes tracker is nullptr");
@@ -58,6 +58,7 @@ namespace kagome::host_api {
     if (not res) {
       logger_->error("ext_clear_prefix failed: {}", res.error().message());
     }
+    SL_TRACE(logger_, "ext_clear_prefix");
   }
 
   void StorageExtension::ext_clear_storage(runtime::WasmPointer key_data,
@@ -65,6 +66,8 @@ namespace kagome::host_api {
     auto batch = storage_provider_->getCurrentBatch();
     auto key = memory_->loadN(key_data, key_length);
     auto del_result = batch->remove(key);
+    tracker_.erase(key);
+    removes_tracker_[key] = 1;
     if (not del_result) {
       logger_->warn(
           "ext_clear_storage did not delete key {} from trie db with reason: "
@@ -78,6 +81,7 @@ namespace kagome::host_api {
       runtime::WasmPointer key_data, runtime::WasmSize key_length) const {
     auto batch = storage_provider_->getCurrentBatch();
     auto key = memory_->loadN(key_data, key_length);
+    SL_TRACE(logger_, "ext_exists_storage");
     return batch->contains(key) ? 1 : 0;
   }
 
@@ -110,6 +114,8 @@ namespace kagome::host_api {
           "ext_get_allocated_storage failed: memory could not allocate enough "
           "memory");
     }
+
+    SL_TRACE(logger_, "ext_get_allocated_storage");
     return data_ptr;
   }
 
@@ -138,6 +144,7 @@ namespace kagome::host_api {
                key.toHex());
     }
     memory_->storeBuffer(value_data, data.value());
+    SL_TRACE(logger_, "ext_get_storage_into");
     return data.value().size();
   }
 
@@ -157,6 +164,7 @@ namespace kagome::host_api {
       memory_->storeBuffer(value_ptr, offset_data.subspan(0, written));
       res = offset_data.size();
     }
+    SL_TRACE(logger_, "ext_storage_read_version_1");
     return memory_->storeBuffer(scale::encode(res).value());
   }
 
@@ -167,26 +175,49 @@ namespace kagome::host_api {
     auto key = memory_->loadN(key_data, key_length);
     auto value = memory_->loadN(value_data, value_length);
 
-    if (value.toHex().size() < 500) {
-      SL_TRACE(logger_,
-               "Set storage. Key: {}, Key hex: {} Value: {}, Value hex {}",
-               key.toString(),
-               key.toHex(),
-               value.toString(),
-               value.toHex());
-    } else {
-      SL_TRACE(logger_,
-               "Set storage. Key: {}, Key hex: {} Value is too big to display",
-               key.toString(),
-               key.toHex());
-    }
+    /*
+     * if (value.toHex().size() < 500) {
+     *   SL_TRACE(logger_,
+     *            "Set storage. Key: {}, Key hex: {} Value: {}, Value hex {}",
+     *            key.toString(),
+     *            key.toHex(),
+     *            value.toString(),
+     *            value.toHex());
+     * } else {
+     *   SL_TRACE(logger_,
+     *            "Set storage. Key: {}, Key hex: {} Value is too big to display",
+     *            key.toString(),
+     *            key.toHex());
+     * }
+     */
 
     auto batch = storage_provider_->getCurrentBatch();
+    if (tracker_.end() != tracker_.find(key)) {
+      auto result = batch->remove(key);
+      if(not result) {
+        logger_->error(
+            "Failed to remove existing value {}: {}",
+            key, result.error().message());
+      } else {
+        tracker_.erase(key);
+        removes_tracker_[key] = 1;
+      }
+    }
     auto put_result = batch->put(key, value);
     if (not put_result) {
       logger_->error(
           "ext_set_storage failed, due to fail in trie db with reason: {}",
           put_result.error().message());
+    } else {
+      if(tracker_.end() == tracker_.find(key))
+        tracker_[key] = 1;
+      else {
+        tracker_[key]++;
+        SL_TRACE(logger_, "Key {} rewritten {} times", key.toString(), tracker_[key]);
+        SL_TRACE(logger_, "{}", key.toHex());
+        SL_TRACE(logger_, "{}", value.toHex());
+        SL_TRACE(logger_, "Total size: {}", tracker_.size());
+      }
     }
   }
 
@@ -236,6 +267,7 @@ namespace kagome::host_api {
     if (auto result_buf = calcStorageChangesRoot(parent_hash);
         result_buf.has_value()) {
       memory_->storeBuffer(result, result_buf.value());
+      SL_TRACE(logger_, "ext_storage_changes_root");
       return result_buf.value().size();
     }
     return 0;
@@ -329,10 +361,12 @@ namespace kagome::host_api {
     auto option = result ? boost::make_optional(result.value()) : boost::none;
 
     if (option) {
-      SL_TRACE(logger_,
-               "ext_storage_get_version_1( {} ) => {}",
-               key_buffer.toHex(),
-               option.value().empty() ? "empty" : option.value().toHex());
+      /*
+       * SL_TRACE(logger_,
+       *          "ext_storage_get_version_1( {} ) => {}",
+       *          key_buffer.toHex(),
+       *          option.value().empty() ? "empty" : option.value().toHex());
+       */
 
     } else {
       SL_TRACE(
@@ -341,6 +375,9 @@ namespace kagome::host_api {
           "{}",
           key_buffer.toHex(),
           result.error().message());
+      if(removes_tracker_.end() != removes_tracker_.find(key_buffer)) {
+        SL_TRACE(logger_, "yes, key was removed");
+      }
     }
 
     return memory_->storeBuffer(scale::encode(option).value());

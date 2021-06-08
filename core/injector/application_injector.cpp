@@ -9,6 +9,7 @@
 
 #include <boost/di.hpp>
 #include <boost/di/extension/scopes/shared.hpp>
+#include <boost/di/extension/policies/types_dumper.hpp>
 #include <libp2p/injector/host_injector.hpp>
 #include <libp2p/injector/kademlia_injector.hpp>
 #include <libp2p/log/configurator.hpp>
@@ -100,6 +101,7 @@
 #include "storage/changes_trie/impl/storage_changes_tracker_impl.hpp"
 #include "storage/database_error.hpp"
 #include "storage/leveldb/leveldb.hpp"
+#include "storage/in_memory/in_memory_storage.hpp"
 #include "storage/predefined_keys.hpp"
 #include "storage/trie/impl/trie_storage_backend_impl.hpp"
 #include "storage/trie/impl/trie_storage_impl.hpp"
@@ -783,7 +785,7 @@ namespace {
     transaction_pool::TransactionPool::Limits tp_pool_limits{};
     libp2p::protocol::PingConfig ping_config{};
 
-    return di::make_injector(
+    return di::make_injector<di::extension::types_dumper>(
         // bind configs
         useConfig(rpc_thread_pool_config),
         useConfig(http_config),
@@ -902,13 +904,16 @@ namespace {
         di::bind<authorship::Proposer>.template to<authorship::ProposerImpl>(),
         di::bind<authorship::BlockBuilder>.template to<authorship::BlockBuilderImpl>(),
         di::bind<authorship::BlockBuilderFactory>.template to<authorship::BlockBuilderFactoryImpl>(),
-        di::bind<storage::BufferStorage>.to([](const auto &injector) {
-          const application::AppConfiguration &config =
-              injector.template create<application::AppConfiguration const &>();
-          auto chain_spec =
-              injector.template create<sptr<application::ChainSpec>>();
-          return get_level_db(config, chain_spec);
-        }),
+        di::bind<storage::BufferStorage>.template to<storage::InMemoryStorage>(),
+        /*
+         * di::bind<storage::BufferStorage>.to([](const auto &injector) {
+         *   const application::AppConfiguration &config =
+         *       injector.template create<application::AppConfiguration const &>();
+         *   auto chain_spec =
+         *       injector.template create<sptr<application::ChainSpec>>();
+         *   return get_level_db(config, chain_spec);
+         * }),
+         */
         di::bind<blockchain::BlockStorage>.to([](const auto &injector) {
           const auto &hasher = injector.template create<sptr<crypto::Hasher>>();
           const auto &db =

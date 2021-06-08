@@ -53,12 +53,14 @@ groups:
               - name: grandpa
                 children:
                   - name: voting_round
+          - name: host_api
+            level: trace
           - name: runtime
             children:
               - name: wasm
                 level: info
               - name: extentions
-              - name: binatien
+              - name: binarien
           - name: metrics
           - name: network
           - name: changes_trie

@@ -218,6 +218,8 @@ namespace kagome::host_api {
     std::shared_ptr<runtime::TrieStorageProvider> storage_provider_;
     std::shared_ptr<runtime::WasmMemory> memory_;
     std::shared_ptr<storage::changes_trie::ChangesTracker> changes_tracker_;
+    std::unordered_map<common::Buffer, unsigned> tracker_;
+    std::unordered_map<common::Buffer, unsigned> removes_tracker_;
     log::Logger logger_;
 
     constexpr static auto kDefaultLoggerTag = "WASM Runtime [StorageExtension]";

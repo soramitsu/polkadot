@@ -4,6 +4,7 @@
 #
 
 add_subdirectory(grandpa)
+add_subdirectory(pruning)
 add_subdirectory(validation)
 add_subdirectory(babe)
 add_subdirectory(authority)

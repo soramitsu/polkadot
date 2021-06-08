@@ -8,8 +8,9 @@
 
 #include <memory>
 
-#include "outcome/outcome.hpp"
 #include "common/buffer.hpp"
+#include "metrics/metrics.hpp"
+#include "outcome/outcome.hpp"
 #include "storage/buffer_map_types.hpp"
 
 namespace kagome::storage {
@@ -21,6 +22,7 @@ namespace kagome::storage {
    */
   class InMemoryStorage : public storage::BufferStorage {
    public:
+    InMemoryStorage();
     ~InMemoryStorage() override = default;
 
     outcome::result<common::Buffer> get(
@@ -48,6 +50,9 @@ namespace kagome::storage {
 
    private:
     std::map<std::string, common::Buffer> storage;
+    metrics::RegistryPtr registry_ = metrics::createRegistry();
+    metrics::Gauge *in_memory_db_size_;
+    metrics::Gauge *in_memory_db_index_size_;
   };
 
 }  // namespace kagome::storage
