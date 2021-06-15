@@ -11,7 +11,7 @@
 #include <WAVM/Runtime/Runtime.h>
 #include <boost/optional.hpp>
 
-#include "runtime/wasm_result.hpp"
+#include "runtime/ptr_size.hpp"
 
 namespace WAVM {
   namespace Runtime {
@@ -25,12 +25,14 @@ namespace WAVM {
 
 namespace kagome::runtime::wavm {
 
-  class ModuleInstance {
+  class ModuleInstance final {
    public:
     explicit ModuleInstance(WAVM::Runtime::Instance *instance,
                             WAVM::Runtime::Compartment *compartment);
 
-    WasmResult callExportFunction(std::string_view name, WasmResult args);
+    ~ModuleInstance();
+
+    PtrSize callExportFunction(std::string_view name, PtrSize args);
 
     boost::optional<WAVM::IR::Value> getGlobal(std::string_view name);
 

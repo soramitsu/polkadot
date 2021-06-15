@@ -33,7 +33,7 @@ using kagome::runtime::WasmLogLevel;
 using kagome::runtime::WasmMemoryMock;
 using kagome::runtime::WasmOffset;
 using kagome::runtime::WasmPointer;
-using kagome::runtime::WasmResult;
+using kagome::runtime::WasmPointer;
 using kagome::runtime::WasmSize;
 using kagome::runtime::WasmSpan;
 using kagome::runtime::binaryen::BinaryenWasmMemoryFactoryMock;
@@ -196,6 +196,7 @@ class REITest : public ::testing::Test {
       "  (import \"env\" \"ext_storage_changes_root\" (func $ext_storage_changes_root (type 2)))\n"
       "  (import \"env\" \"ext_print_hex\" (func $ext_print_hex (type 0)))\n"
       "  (import \"env\" \"ext_logging_log_version_1\" (func $ext_logging_log_version_1 (type 12)))\n"
+      "  (import \"env\" \"ext_logging_max_level_version_1\" (func $ext_logging_max_level_version_1 (type 35)))\n"
       "  (import \"env\" \"ext_chain_id\" (func $ext_chain_id (type 27)))\n"
 
       /// version 1
@@ -487,7 +488,7 @@ TEST_F(REITest, ext_print_hex_Test) {
 }
 
 TEST_F(REITest, ext_logging_log_version_1_Test) {
-  WasmResult position(12, 12);
+  PtrSize position(12, 12);
   const auto pos_packed = position.combine();
   WasmEnum ll = static_cast<WasmEnum>(WasmLogLevel::WasmLL_Error);
 
@@ -500,6 +501,25 @@ TEST_F(REITest, ext_logging_log_version_1_Test) {
                                      "    )\n")
                        % ll % position.combine() % position.combine())
                           .str();
+  executeWasm(execute_code);
+}
+
+/**
+ * @given wasm runtime ext_logging_max_level_version_1
+ * @when try to get max log level
+ * @then correct log level returned once
+ */
+TEST_F(REITest, ext_logging_max_level_version_1_Test) {
+  WasmEnum expected_res = static_cast<WasmEnum>(WasmLogLevel::WasmLL_Info);
+
+  EXPECT_CALL(*host_api_, ext_logging_max_level_version_1()).WillOnce(Return(expected_res));
+  auto execute_code = (boost::format("    (call $assert_eq_i32\n"
+                                     "      (call $ext_logging_max_level_version_1)\n"
+                                     "      (i32.const %d)\n"
+                                     "    )\n")
+                       % expected_res)
+                          .str();
+  SCOPED_TRACE("ext_logging_max_level_version_1_Test");
   executeWasm(execute_code);
 }
 
@@ -636,7 +656,7 @@ TEST_F(REITest, ext_sr25519_verify_Test) {
 
 TEST_F(REITest, ext_ed25519_public_keys_v1_Test) {
   WasmSize key_type = KEY_TYPE_BABE;
-  WasmSpan res = WasmResult(1, 2).combine();
+  WasmSpan res = PtrSize(1, 2).combine();
 
   EXPECT_CALL(*host_api_, ext_ed25519_public_keys_v1(key_type))
       .WillOnce(Return(res));
@@ -656,7 +676,7 @@ TEST_F(REITest, ext_ed25519_public_keys_v1_Test) {
 
 TEST_F(REITest, ext_ed25519_generate_v1_Test) {
   WasmSize key_type = KEY_TYPE_BABE;
-  WasmSpan seed = WasmResult(1, 2).combine();
+  WasmSpan seed = PtrSize(1, 2).combine();
 
   WasmPointer res = 4;
 
@@ -680,8 +700,8 @@ TEST_F(REITest, ext_ed25519_generate_v1_Test) {
 TEST_F(REITest, ext_ed25519_sign_v1_Test) {
   WasmSize key_type = KEY_TYPE_BABE;
   WasmPointer key = 1;
-  WasmSpan msg = WasmResult(33, 2).combine();
-  WasmSpan res = WasmResult(35, 25).combine();
+  WasmSpan msg = PtrSize(33, 2).combine();
+  WasmSpan res = PtrSize(35, 25).combine();
 
   EXPECT_CALL(*host_api_, ext_ed25519_sign_v1(key_type, key, msg))
       .WillOnce(Return(res));
@@ -704,7 +724,7 @@ TEST_F(REITest, ext_ed25519_sign_v1_Test) {
 TEST_F(REITest, ext_ed25519_verify_v1_Test) {
   WasmPointer msg_data = 123;
   WasmSize msg_len = 1233;
-  WasmSpan msg = WasmResult(msg_data, msg_len).combine();
+  WasmSpan msg = PtrSize(msg_data, msg_len).combine();
   WasmPointer sig_data = 42;
   WasmPointer pubkey_data = 321;
 
@@ -731,7 +751,7 @@ TEST_F(REITest, ext_ed25519_verify_v1_Test) {
 TEST_F(REITest, ext_sr25519_public_keys_v1_Test) {
   WasmSize key_type = KEY_TYPE_BABE;
 
-  WasmSpan res = WasmResult(1, 2).combine();
+  WasmSpan res = PtrSize(1, 2).combine();
 
   EXPECT_CALL(*host_api_, ext_sr25519_public_keys_v1(key_type))
       .WillOnce(Return(res));
@@ -751,7 +771,7 @@ TEST_F(REITest, ext_sr25519_public_keys_v1_Test) {
 
 TEST_F(REITest, ext_sr25519_generate_v1_Test) {
   WasmSize key_type = KEY_TYPE_BABE;
-  WasmSpan seed = WasmResult(1, 2).combine();
+  WasmSpan seed = PtrSize(1, 2).combine();
 
   WasmPointer res = 4;
 
@@ -775,8 +795,8 @@ TEST_F(REITest, ext_sr25519_generate_v1_Test) {
 TEST_F(REITest, ext_sr25519_sign_v1_Test) {
   WasmSize key_type = KEY_TYPE_BABE;
   WasmPointer key = 1;
-  WasmSpan msg = WasmResult(33, 2).combine();
-  WasmSpan res = WasmResult(35, 25).combine();
+  WasmSpan msg = PtrSize(33, 2).combine();
+  WasmSpan res = PtrSize(35, 25).combine();
 
   EXPECT_CALL(*host_api_, ext_sr25519_sign_v1(key_type, key, msg))
       .WillOnce(Return(res));
@@ -799,7 +819,7 @@ TEST_F(REITest, ext_sr25519_sign_v1_Test) {
 TEST_F(REITest, ext_sr25519_verify_v2_Test) {
   WasmPointer msg_data = 123;
   WasmSize msg_len = 1233;
-  WasmSpan msg = WasmResult(msg_data, msg_len).combine();
+  WasmSpan msg = PtrSize(msg_data, msg_len).combine();
   WasmPointer sig_data = 42;
   WasmPointer pubkey_data = 321;
 
@@ -873,7 +893,7 @@ TEST_F(REITest, ext_chain_id_Test) {
 TEST_F(REITest, ext_crypto_secp256k1_ecdsa_recover_version_1_Test) {
   WasmPointer sig_ptr = 12;
   WasmPointer msg_ptr = 77;
-  WasmSpan out_span = WasmResult{109, 41}.combine();
+  WasmSpan out_span = PtrSize{109, 41}.combine();
 
   EXPECT_CALL(*host_api_,
               ext_crypto_secp256k1_ecdsa_recover_v1(sig_ptr, msg_ptr))
@@ -894,7 +914,7 @@ TEST_F(REITest, ext_crypto_secp256k1_ecdsa_recover_version_1_Test) {
 TEST_F(REITest, ext_crypto_secp256k1_ecdsa_recover_compressed_version_1_Test) {
   WasmPointer sig_ptr = 12;
   WasmPointer msg_ptr = 77;
-  WasmSpan out_span = WasmResult{109, 41}.combine();
+  WasmSpan out_span = PtrSize{109, 41}.combine();
 
   EXPECT_CALL(
       *host_api_,
@@ -917,7 +937,7 @@ TEST_F(REITest, ext_crypto_secp256k1_ecdsa_recover_compressed_version_1_Test) {
 
 TEST_F(REITest, ext_hashing_keccak_256_version_1_Test) {
   WasmPointer res = 3;
-  WasmSpan param = WasmResult(1, 2).combine();
+  WasmSpan param = PtrSize(1, 2).combine();
 
   EXPECT_CALL(*host_api_, ext_hashing_keccak_256_version_1(param))
       .WillOnce(Return(res));
@@ -937,7 +957,7 @@ TEST_F(REITest, ext_hashing_keccak_256_version_1_Test) {
 
 TEST_F(REITest, ext_hashing_sha2_256_version_1_Test) {
   WasmPointer res = 3;
-  WasmSpan param = WasmResult(1, 2).combine();
+  WasmSpan param = PtrSize(1, 2).combine();
 
   EXPECT_CALL(*host_api_, ext_hashing_sha2_256_version_1(param))
       .WillOnce(Return(res));
@@ -957,7 +977,7 @@ TEST_F(REITest, ext_hashing_sha2_256_version_1_Test) {
 
 TEST_F(REITest, ext_hashing_blake2_128_version_1_Test) {
   WasmPointer res = 3;
-  WasmSpan param = WasmResult(1, 2).combine();
+  WasmSpan param = PtrSize(1, 2).combine();
 
   EXPECT_CALL(*host_api_, ext_hashing_blake2_128_version_1(param))
       .WillOnce(Return(res));
@@ -977,7 +997,7 @@ TEST_F(REITest, ext_hashing_blake2_128_version_1_Test) {
 
 TEST_F(REITest, ext_hashing_blake2_256_version_1_Test) {
   WasmPointer res = 3;
-  WasmSpan param = WasmResult(1, 2).combine();
+  WasmSpan param = PtrSize(1, 2).combine();
 
   EXPECT_CALL(*host_api_, ext_hashing_blake2_256_version_1(param))
       .WillOnce(Return(res));
@@ -997,7 +1017,7 @@ TEST_F(REITest, ext_hashing_blake2_256_version_1_Test) {
 
 TEST_F(REITest, ext_hashing_twox_256_version_1_Test) {
   WasmPointer res = 3;
-  WasmSpan param = WasmResult(1, 2).combine();
+  WasmSpan param = PtrSize(1, 2).combine();
 
   EXPECT_CALL(*host_api_, ext_hashing_twox_256_version_1(param))
       .WillOnce(Return(res));
@@ -1017,7 +1037,7 @@ TEST_F(REITest, ext_hashing_twox_256_version_1_Test) {
 
 TEST_F(REITest, ext_hashing_twox_128_version_1_Test) {
   WasmPointer res = 3;
-  WasmSpan param = WasmResult(1, 2).combine();
+  WasmSpan param = PtrSize(1, 2).combine();
 
   EXPECT_CALL(*host_api_, ext_hashing_twox_128_version_1(param))
       .WillOnce(Return(res));
@@ -1037,7 +1057,7 @@ TEST_F(REITest, ext_hashing_twox_128_version_1_Test) {
 
 TEST_F(REITest, ext_hashing_twox_64_version_1_Test) {
   WasmPointer res = 3;
-  WasmSpan param = WasmResult(1, 2).combine();
+  WasmSpan param = PtrSize(1, 2).combine();
 
   EXPECT_CALL(*host_api_, ext_hashing_twox_64_version_1(param))
       .WillOnce(Return(res));
@@ -1086,8 +1106,8 @@ TEST_F(REITest, ext_allocator_free_version_1_Test) {
 }
 
 TEST_F(REITest, ext_storage_set_version_1_Test) {
-  WasmSpan param1 = WasmResult(1, 2).combine();
-  WasmSpan param2 = WasmResult(3, 4).combine();
+  WasmSpan param1 = PtrSize(1, 2).combine();
+  WasmSpan param2 = PtrSize(3, 4).combine();
   EXPECT_CALL(*host_api_, ext_storage_set_version_1(param1, param2))
       .WillOnce(Return());
 
@@ -1103,7 +1123,7 @@ TEST_F(REITest, ext_storage_set_version_1_Test) {
 
 TEST_F(REITest, ext_storage_get_version_1_Test) {
   WasmSize key_type = KEY_TYPE_BABE;
-  WasmSpan res = WasmResult(1, 2).combine();
+  WasmSpan res = PtrSize(1, 2).combine();
 
   EXPECT_CALL(*host_api_, ext_storage_get_version_1(key_type))
       .WillOnce(Return(res));
@@ -1135,7 +1155,7 @@ TEST_F(REITest, ext_storage_clear_version_1_Test) {
 
 TEST_F(REITest, ext_storage_exists_version_1_Test) {
   WasmPointer res = 3;
-  WasmSpan param = WasmResult(1, 2).combine();
+  WasmSpan param = PtrSize(1, 2).combine();
 
   EXPECT_CALL(*host_api_, ext_storage_exists_version_1(param))
       .WillOnce(Return(res));
@@ -1154,10 +1174,10 @@ TEST_F(REITest, ext_storage_exists_version_1_Test) {
 }
 
 TEST_F(REITest, ext_storage_read_version_1_Test) {
-  WasmResult key(123, 1233);
-  WasmResult value(42, 12);
+  PtrSize key(123, 1233);
+  PtrSize value(42, 12);
   WasmOffset offset(1);
-  WasmSpan res = WasmResult(1, 2).combine();
+  WasmSpan res = PtrSize(1, 2).combine();
 
   EXPECT_CALL(
       *host_api_,
@@ -1249,7 +1269,7 @@ TEST_F(REITest, ext_storage_next_key_version_1_Test) {
 
 TEST_F(REITest, ext_trie_blake2_256_root_version_1_Test) {
   WasmPointer res = 3;
-  WasmSpan param = WasmResult(1, 2).combine();
+  WasmSpan param = PtrSize(1, 2).combine();
 
   EXPECT_CALL(*host_api_, ext_trie_blake2_256_root_version_1(param))
       .WillOnce(Return(res));
@@ -1269,7 +1289,7 @@ TEST_F(REITest, ext_trie_blake2_256_root_version_1_Test) {
 
 TEST_F(REITest, ext_trie_blake2_256_ordered_root_version_1_Test) {
   WasmPointer res = 3;
-  WasmSpan param = WasmResult(1, 2).combine();
+  WasmSpan param = PtrSize(1, 2).combine();
 
   EXPECT_CALL(*host_api_, ext_trie_blake2_256_ordered_root_version_1(param))
       .WillOnce(Return(res));

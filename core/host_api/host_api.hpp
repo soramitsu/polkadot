@@ -10,8 +10,8 @@
 #include <functional>
 #include <memory>
 
+#include "runtime/ptr_size.hpp"
 #include "runtime/types.hpp"
-#include "runtime/wasm_result.hpp"
 
 namespace kagome::runtime {
   class Memory;
@@ -163,6 +163,10 @@ namespace kagome::host_api {
     virtual void ext_logging_log_version_1(runtime::WasmEnum level,
                                            runtime::WasmSpan target,
                                            runtime::WasmSpan message) = 0;
+    /**
+     * Get host max log level
+     */
+    virtual runtime::WasmEnum ext_logging_max_level_version_1() = 0;
 
     // -------------------------Cryptographic extensions------------------------
 

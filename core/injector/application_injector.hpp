@@ -23,6 +23,10 @@ namespace kagome {
     class AppStateManager;
   }  // namespace application
 
+  namespace metrics {
+    class Exposer;
+  }  // namespace metrics
+
   namespace network {
     class Router;
     class PeerManager;
@@ -40,6 +44,11 @@ namespace kagome {
   namespace consensus::grandpa {
     class Grandpa;
   }
+
+  namespace blockchain {
+    class BlockStorage;
+  }
+
 }  // namespace kagome
 
 namespace kagome::injector {
@@ -53,8 +62,10 @@ namespace kagome::injector {
     explicit KagomeNodeInjector(const application::AppConfiguration &);
 
     std::shared_ptr<application::ChainSpec> injectChainSpec();
+    std::shared_ptr<blockchain::BlockStorage> injectBlockStorage();
     std::shared_ptr<application::AppStateManager> injectAppStateManager();
     std::shared_ptr<boost::asio::io_context> injectIoContext();
+    std::shared_ptr<metrics::Exposer> injectOpenMetricsService();
     std::shared_ptr<network::Router> injectRouter();
     std::shared_ptr<network::PeerManager> injectPeerManager();
     std::shared_ptr<api::ApiService> injectRpcApiService();

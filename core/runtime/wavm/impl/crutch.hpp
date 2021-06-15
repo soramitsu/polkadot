@@ -13,6 +13,7 @@
 #include "WAVM/Runtime/Intrinsics.h"
 #include "WAVM/Runtime/Runtime.h"
 #include "WAVM/WASTParse/WASTParse.h"
+
 #include "host_api/host_api.hpp"
 #include "log/logger.hpp"
 
@@ -24,12 +25,10 @@ namespace kagome::runtime::wavm {
 
   extern log::Logger logger;
 
-  using namespace WAVM;
-  using namespace WAVM::IR;
-  using namespace WAVM::Runtime;
+  extern const WAVM::IR::MemoryType kIntrinsicMemoryType;
+  constexpr std::string_view kIntrinsicMemoryName = "Host memory";
 
   WAVM::Intrinsics::Module *getIntrinsicModule_env();
-  extern WAVM::Intrinsics::Memory env_memory;
 
 #define DECLARE_HOST_INTRINSIC(Ret, name, ...)                    \
   Ret name(WAVM::Runtime::ContextRuntimeData *contextRuntimeData, \

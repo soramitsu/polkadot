@@ -54,7 +54,8 @@ namespace kagome::consensus {
         authority_update_observer_{std::move(authority_update_observer)},
         babe_util_(std::move(babe_util)),
         io_context_(std::move(io_context)),
-        logger_{log::createLogger("BlockExecutor", "block_executor", soralog::Level::DEBUG)} {
+        logger_{log::createLogger(
+            "BlockExecutor", "block_executor", soralog::Level::DEBUG)} {
     BOOST_ASSERT(block_tree_ != nullptr);
     BOOST_ASSERT(core_ != nullptr);
     BOOST_ASSERT(babe_configuration_ != nullptr);
@@ -295,7 +296,7 @@ namespace kagome::consensus {
                 block_tree_->getEpochDescriptor(epoch_number,
                                                 block.header.parent_hash));
 
-    auto &slot_number = babe_header.slot_number;
+    [[maybe_unused]] auto &slot_number = babe_header.slot_number;
     SL_TRACE(
         logger_,
         "EPOCH_DIGEST: Actual epoch digest for epoch {} in slot {} (to apply "

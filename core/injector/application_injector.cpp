@@ -73,6 +73,9 @@
 #include "host_api/impl/host_api_impl.hpp"
 #include "log/configurator.hpp"
 #include "log/logger.hpp"
+#include "metrics/impl/exposer_impl.hpp"
+#include "metrics/impl/prometheus/handler_impl.hpp"
+#include "metrics/metrics.hpp"
 #include "network/impl/extrinsic_observer_impl.hpp"
 #include "network/impl/gossiper_broadcast.hpp"
 #include "network/impl/kademlia_storage_backend.hpp"
@@ -87,7 +90,9 @@
 #include "runtime/wavm/executor.hpp"
 #include "runtime/wavm/impl/core_api_provider.hpp"
 #include "runtime/wavm/impl/crutch.hpp"
+#include "runtime/wavm/impl/intrinsic_module_instance.hpp"
 #include "runtime/wavm/impl/intrinsic_resolver_impl.hpp"
+#include "runtime/wavm/impl/runtime_upgrade_tracker.hpp"
 #include "runtime/wavm/impl/module_repository_impl.hpp"
 #include "runtime/wavm/runtime_api/account_nonce_api.hpp"
 #include "runtime/wavm/runtime_api/babe_api.hpp"
@@ -105,7 +110,6 @@
 #include "storage/predefined_keys.hpp"
 #include "storage/trie/impl/trie_storage_backend_impl.hpp"
 #include "storage/trie/impl/trie_storage_impl.hpp"
-#include "storage/trie/polkadot_trie/polkadot_node.hpp"
 #include "storage/trie/polkadot_trie/polkadot_trie_factory_impl.hpp"
 #include "storage/trie/serialization/polkadot_codec.hpp"
 #include "storage/trie/serialization/trie_serializer_impl.hpp"
@@ -661,13 +665,13 @@ namespace {
         injector.template create<std::shared_ptr<network::ProtocolFactory>>();
     protocol_factory->setBlockTree(block_tree);
 
-    auto storage_code_provider =
-        injector
-            .template create<std::shared_ptr<runtime::StorageCodeProvider>>();
+    auto runtime_upgrade_tracker = injector.template create<
+        sptr<runtime::wavm::RuntimeUpgradeTracker>>();
     auto storage_events_engine = injector.template create<
         primitives::events::StorageSubscriptionEnginePtr>();
-    storage_code_provider->subscribeToBlockchainEvents(
-        storage_events_engine, header_repo, block_tree);
+
+    runtime_upgrade_tracker->subscribeToBlockchainEvents(
+        storage_events_engine, block_tree);
 
     initialized.emplace(std::move(block_tree));
     return initialized.value();
@@ -854,6 +858,19 @@ namespace {
           return get_jrpc_api_ws_listener(
               app_config, config, context, app_state_manager);
         }),
+        // starting metrics interfaces
+        di::bind<metrics::Handler>.template to<metrics::PrometheusHandler>(),
+        di::bind<metrics::Exposer>.template to<metrics::ExposerImpl>(),
+        di::bind<metrics::Exposer::Configuration>.to([](const auto &injector) {
+          return metrics::Exposer::Configuration{
+              injector.template create<application::AppConfiguration const &>()
+                  .openmetricsHttpEndpoint()};
+        }),
+        // hardfix for Mac clang
+        di::bind<metrics::Session::Configuration>.to([](const auto &injector) {
+          return metrics::Session::Configuration{};
+        }),
+        // ending metrics interfaces
         di::bind<libp2p::crypto::random::RandomGenerator>.template to<libp2p::crypto::random::BoostRandomGenerator>()
             [di::override],
         di::bind<api::AuthorApi>.template to<api::AuthorApiImpl>(),
@@ -893,6 +910,8 @@ namespace {
         di::bind<clock::SteadyClock>.template to<clock::SteadyClockImpl>(),
         di::bind<clock::Timer>.template to<clock::BasicWaitableTimer>(),
         di::bind<primitives::BabeConfiguration>.to([](auto const &injector) {
+          // need it to add genesis block if it's not there
+          injector.template create<sptr<blockchain::BlockStorage>>();
           auto babe_api = injector.template create<sptr<runtime::BabeApi>>();
           return get_babe_configuration(babe_api);
         }),
@@ -933,10 +952,10 @@ namespace {
         }),
         di::bind<runtime::MemoryProvider>.template to([](const auto &injector) {
           static auto initialized = [&injector]() {
-            auto resolver = injector.template create<
-                std::shared_ptr<runtime::wavm::IntrinsicResolver>>();
+            auto instance = injector.template create<
+                std::shared_ptr<runtime::wavm::IntrinsicModuleInstance>>();
             return std::make_shared<runtime::wavm::WavmMemoryProvider>(
-                resolver);
+                instance);
           }();
           return initialized;
         }),
@@ -1036,6 +1055,24 @@ namespace {
         di::bind<network::SyncProtocolObserver>.to([](auto const &injector) {
           return get_sync_observer_impl(injector);
         }),
+        di::bind<WAVM::Runtime::Compartment>.template to(
+            [](const auto &injector) {
+              static WAVM::Runtime::Compartment *compartment =
+                  WAVM::Runtime::createCompartment("Runtime Compartment");
+              return compartment;
+            }),
+        di::bind<runtime::wavm::IntrinsicModuleInstance>.template to(
+            [](const auto &injector) {
+              static std::shared_ptr<runtime::wavm::IntrinsicModuleInstance>
+                  instance = [&injector]() {
+                    auto compartment =
+                        injector
+                            .template create<WAVM::Runtime::Compartment *>();
+                    return std::make_shared<
+                        runtime::wavm::IntrinsicModuleInstance>(compartment);
+                  }();
+              return instance;
+            }),
         di::bind<runtime::wavm::IntrinsicResolverImpl>.template to(
             [](const auto &injector) {
               static boost::optional<
@@ -1044,8 +1081,13 @@ namespace {
               if (initialized) {
                 return initialized.value();
               }
+              auto instance = injector.template create<
+                  sptr<runtime::wavm::IntrinsicModuleInstance>>();
+              auto compartment =
+                  injector.template create<WAVM::Runtime::Compartment *>();
               auto resolver =
-                  std::make_shared<runtime::wavm::IntrinsicResolverImpl>();
+                  std::make_shared<runtime::wavm::IntrinsicResolverImpl>(
+                      instance, compartment);
 
               initialized = std::move(resolver);
               return initialized.value();
@@ -1080,19 +1122,20 @@ namespace {
           if (!initialized) {
             auto storage_provider = injector.template create<
                 std::shared_ptr<runtime::TrieStorageProvider>>();
-            auto resolver = injector.template create<
-                std::shared_ptr<runtime::wavm::IntrinsicResolver>>();
             auto memory_provider = injector.template create<
                 std::shared_ptr<runtime::MemoryProvider>>();
             auto module_repo = injector.template create<
                 std::shared_ptr<runtime::wavm::ModuleRepository>>();
             auto header_repo = injector.template create<
                 std::shared_ptr<blockchain::BlockHeaderRepository>>();
+            auto code_provider = injector.template create<
+                std::shared_ptr<runtime::RuntimeCodeProvider>>();
             initialized = std::make_shared<runtime::wavm::Executor>(
                 std::move(storage_provider),
-                memory_provider,
-                module_repo,
-                header_repo);
+                std::move(memory_provider),
+                std::move(module_repo),
+                std::move(header_repo),
+                std::move(code_provider));
           }
           return initialized.value();
         }),
@@ -1142,13 +1185,6 @@ namespace {
             [](const auto &injector) {
               auto provider = injector.template create<
                   std::shared_ptr<runtime::StorageCodeProvider>>();
-              static bool initialized = false;
-              if (!initialized) {
-                auto executor = injector.template create<
-                    std::shared_ptr<runtime::wavm::Executor>>();
-                executor->setCodeProvider(provider);
-              }
-              initialized = true;
               return provider;
             }),
         di::bind<application::ChainSpec>.to([](const auto &injector) {
@@ -1418,12 +1454,17 @@ namespace kagome::injector {
       const application::AppConfiguration &app_config)
       : pimpl_{std::make_unique<KagomeNodeInjectorImpl>(
           makeKagomeNodeInjector(app_config))} {
-    pimpl_->injector_.create<sptr<runtime::RuntimeCodeProvider>>();
+    // need to initialize it before anything calls Runtime API
     pimpl_->injector_.create<sptr<host_api::HostApi>>();
   }
 
   sptr<application::ChainSpec> KagomeNodeInjector::injectChainSpec() {
     return pimpl_->injector_.create<sptr<application::ChainSpec>>();
+  }
+
+  std::shared_ptr<blockchain::BlockStorage>
+  KagomeNodeInjector::injectBlockStorage() {
+    return pimpl_->injector_.create<sptr<blockchain::BlockStorage>>();
   }
 
   sptr<application::AppStateManager>
@@ -1433,6 +1474,17 @@ namespace kagome::injector {
 
   sptr<boost::asio::io_context> KagomeNodeInjector::injectIoContext() {
     return pimpl_->injector_.create<sptr<boost::asio::io_context>>();
+  }
+
+  sptr<metrics::Exposer> KagomeNodeInjector::injectOpenMetricsService() {
+    // registry here is temporary, it initiates static global registry
+    // and registers handler in there
+    auto registry = metrics::createRegistry();
+    auto handler = pimpl_->injector_.create<sptr<metrics::Handler>>();
+    registry->setHandler(*handler.get());
+    auto exposer = pimpl_->injector_.create<sptr<metrics::Exposer>>();
+    exposer->setHandler(handler);
+    return exposer;
   }
 
   sptr<network::Router> KagomeNodeInjector::injectRouter() {

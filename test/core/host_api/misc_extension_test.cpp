@@ -31,7 +31,7 @@ using kagome::runtime::Memory;
 using kagome::runtime::MemoryMock;
 using kagome::runtime::MemoryProviderMock;
 using kagome::runtime::TrieStorageProviderMock;
-using kagome::runtime::WasmResult;
+using kagome::runtime::PtrSize;
 using kagome::scale::encode;
 using testing::_;
 using testing::Invoke;
@@ -67,10 +67,10 @@ TEST_F(MiscExtensionTest, Init) {
  * @then ext_chain_id return the chain id
  */
 TEST_F(MiscExtensionTest, CoreVersion) {
-  WasmResult state_code1{42, 4};
-  WasmResult state_code2{46, 5};
-  WasmResult res1{51, 4};
-  WasmResult res2{55, 4};
+  PtrSize state_code1{42, 4};
+  PtrSize state_code2{46, 5};
+  PtrSize res1{51, 4};
+  PtrSize res2{55, 4};
 
   kagome::primitives::Version v1{};
   v1.authoring_version = 42;
@@ -89,7 +89,7 @@ TEST_F(MiscExtensionTest, CoreVersion) {
   EXPECT_CALL(*core_provider, makeCoreApi(_, _))
       .WillOnce(Invoke([&v1](auto &, auto &code) {
         auto core = std::make_unique<kagome::runtime::CoreMock>();
-        EXPECT_CALL(*core, version(_)).WillOnce(Return(v1));
+        EXPECT_CALL(*core, version()).WillOnce(Return(v1));
         kagome::runtime::wavm::pushHostApi(std::make_shared<HostApiMock>());
         return core;
       }));
@@ -106,7 +106,7 @@ TEST_F(MiscExtensionTest, CoreVersion) {
   EXPECT_CALL(*core_provider, makeCoreApi(_, _))
       .WillOnce(Invoke([&v2](auto &, auto &code) {
         auto core = std::make_unique<kagome::runtime::CoreMock>();
-        EXPECT_CALL(*core, version(_)).WillOnce(Return(v2));
+        EXPECT_CALL(*core, version()).WillOnce(Return(v2));
         kagome::runtime::wavm::pushHostApi(std::make_shared<HostApiMock>());
         return core;
       }));
