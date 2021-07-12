@@ -8,12 +8,38 @@
 #include "crypto/hasher.hpp"
 #include "runtime/binaryen/module/wasm_module.hpp"
 #include "runtime/binaryen/wasm_executor.hpp"
-#include "runtime/wasm_memory.hpp"
+#include "runtime/memory.hpp"
+#include "runtime/memory_provider.hpp"
 #include "runtime/types.hpp"
 
 namespace kagome::runtime::binaryen {
 
+  RuntimeEnvironment::RuntimeEnvironment(
+      Memory &memory,
+      const std::shared_ptr<RuntimeExternalInterface> &rei,
+      const std::shared_ptr<WasmModuleInstance> &module_instance,
+      boost::optional<std::shared_ptr<storage::trie::TopperTrieBatch>> batch)
+      : module_instance{module_instance},
+        memory{memory},
+        rei{rei},
+        batch{batch} {}
+
+  RuntimeEnvironment::RuntimeEnvironment(RuntimeEnvironment &&re)
+      : module_instance{std::move(re.module_instance)},
+        memory{re.memory},
+        rei{std::move(re.rei)},
+        batch{std::move(re.batch)} {}
+
+  RuntimeEnvironment &RuntimeEnvironment::operator=(RuntimeEnvironment &&re) {
+    module_instance = std::move(re.module_instance);
+    memory = re.memory;
+    rei = std::move(re.rei);
+    batch = std::move(re.batch);
+    return *this;
+  }
+
   outcome::result<RuntimeEnvironment> RuntimeEnvironment::create(
+      const std::shared_ptr<MemoryProvider> &memory_provider,
       const std::shared_ptr<RuntimeExternalInterface> &rei,
       const std::shared_ptr<WasmModule> &module) {
     auto module_instance = module->instantiate(rei);
@@ -28,11 +54,18 @@ namespace kagome::runtime::binaryen {
       heap_base = 1024;  // Fallback value
     }
 
-    auto memory = rei->memory();
-    memory->setHeapBase(heap_base);
-    memory->reset();
+    memory_provider->resetMemory(heap_base);
+    auto memory = memory_provider->getCurrentMemory();
+    BOOST_ASSERT(memory.has_value());
 
-    return RuntimeEnvironment{std::move(module_instance), std::move(memory)};
+    return outcome::success(RuntimeEnvironment{
+        memory.value(), rei, std::move(module_instance), boost::none});
+  }
+
+  RuntimeEnvironment::~RuntimeEnvironment() {
+    if (rei) {
+      rei->reset();
+    }
   }
 
 }  // namespace kagome::runtime::binaryen

@@ -47,6 +47,8 @@ namespace {
     roles.flags.full = 1;
     return roles;
   }();
+  const auto def_runtime_backend =
+      kagome::application::AppConfiguration::RuntimeBackend::Binaryen;
 
   /**
    * Generate once at run random node name if form of UUID
@@ -63,6 +65,18 @@ namespace {
       name = name.substr(0, max_len);
     }
     return name;
+  }
+
+  boost::optional<kagome::application::AppConfiguration::RuntimeBackend>
+  str_to_runtime_backend(std::string_view str) {
+    using RB = kagome::application::AppConfiguration::RuntimeBackend;
+    if (str == "wavm") {
+      return RB::WAVM;
+    }
+    if (str == "binaryen") {
+      return RB::Binaryen;
+    }
+    return boost::none;
   }
 }  // namespace
 
@@ -82,7 +96,8 @@ namespace kagome::application {
         openmetrics_http_port_(def_openmetrics_http_port),
         dev_mode_(def_dev_mode),
         node_name_(randomNodeName()),
-        max_ws_connections_(def_ws_max_connections) {}
+        max_ws_connections_(def_ws_max_connections),
+        runtime_backend_{def_runtime_backend} {}
 
   fs::path AppConfigurationImpl::chainSpecPath() const {
     return chain_spec_path_.native();
@@ -371,11 +386,13 @@ namespace kagome::application {
         ("name", po::value<std::string>(), "the human-readable name for this node")
         ;
 
-    po::options_description development_desc("Development options");
+    po::options_description development_desc("Additional options");
     development_desc.add_options()
         ("dev", "if node run in development mode")
         ("dev-with-wipe", "if needed to wipe base path (only for dev mode)")
+        ("runtime-backend", po::value<std::string>()->default_value("binaryen"), "choose the runtime backend")
         ;
+
     // clang-format on
 
     po::variables_map vm;
@@ -657,6 +674,18 @@ namespace kagome::application {
 
     find_argument<std::string>(
         vm, "name", [&](std::string const &val) { node_name_ = val; });
+
+    boost::optional<RuntimeBackend> runtime_backend_opt;
+    find_argument<std::string>(
+        vm, "runtime-backend", [&runtime_backend_opt](std::string const &val) {
+          runtime_backend_opt = str_to_runtime_backend(val);
+        });
+    if (not runtime_backend_opt) {
+      logger_->error("Invalid runtime backend specified");
+      return false;
+    } else {
+      runtime_backend_ = runtime_backend_opt.value();
+    }
 
     // if something wrong with config print help message
     if (not validate_config()) {

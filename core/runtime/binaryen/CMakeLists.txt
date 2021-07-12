@@ -20,6 +20,12 @@ target_link_libraries(binaryen_wasm_memory_factory
     )
 kagome_install(binaryen_wasm_memory_factory)
 
+add_library(binaryen_memory_provider binaryen_memory_provider.cpp)
+target_link_libraries(binaryen_memory_provider
+    binaryen_wasm_memory_factory
+    )
+kagome_install(binaryen_memory_provider)
+
 add_library(binaryen_runtime_external_interface
     runtime_external_interface.hpp
     runtime_external_interface.cpp
@@ -59,6 +65,7 @@ add_library(binaryen_runtime_environment_factory
     )
 target_link_libraries(binaryen_runtime_environment_factory
     binaryen_runtime_environment
+    binaryen_memory_provider
     binaryen_wasm_module
     binaryen_runtime_external_interface
     )
@@ -82,9 +89,18 @@ target_link_libraries(binaryen_runtime_api INTERFACE
     )
 kagome_install(binaryen_runtime_api)
 
+
+add_library(binaryen_core_api_provider
+    core_api_factory.cpp
+    )
+target_link_libraries(binaryen_core_api_provider
+    binaryen_core_api
+    constant_code_provider
+    )
+kagome_install(binaryen_core_api_provider)
+
 add_library(binaryen_core_api
     runtime_api/core_impl.cpp
-    runtime_api/core_factory_impl.cpp
     )
 target_link_libraries(binaryen_core_api
     binaryen_wasm_executor
@@ -157,10 +173,10 @@ target_link_libraries(binaryen_transaction_payment_api
     binaryen_runtime_api
     )
 
-add_library(binaryen_system_api
+add_library(binaryen_account_nonce_api
     runtime_api/account_nonce_api_impl.cpp
     )
-target_link_libraries(binaryen_system_api
+target_link_libraries(binaryen_account_nonce_api
     binaryen_wasm_executor
     binaryen_runtime_api
     )

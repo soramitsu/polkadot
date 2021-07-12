@@ -5,13 +5,14 @@
 
 #include "runtime/binaryen/wasm_memory_impl.hpp"
 
-#include "runtime/wasm_result.hpp"
+#include "runtime/ptr_size.hpp"
 
 namespace kagome::runtime::binaryen {
-  WasmMemoryImpl::WasmMemoryImpl(wasm::ShellExternalInterface::Memory *memory)
+  WasmMemoryImpl::WasmMemoryImpl(wasm::ShellExternalInterface::Memory *memory,
+                                 WasmSize heap_base)
       : memory_(memory),
         size_(kInitialMemorySize),
-        heap_base_{kDefaultHeapBase},
+        heap_base_{heap_base},
         offset_{heap_base_},
         logger_{log::createLogger("WasmMemory", "wasm")} {
     // Heap base (and offset in according) must be non zero to prohibit
@@ -22,22 +23,6 @@ namespace kagome::runtime::binaryen {
     size_ = std::max(size_, offset_);
 
     WasmMemoryImpl::resize(size_);
-  }
-
-  void WasmMemoryImpl::setHeapBase(WasmSize heap_base) {
-    BOOST_ASSERT(heap_base > 0);
-    heap_base_ = roundUpAlign(heap_base);
-  }
-
-  void WasmMemoryImpl::reset() {
-    offset_ = heap_base_;
-    allocated_.clear();
-    deallocated_.clear();
-    if (size_ < offset_) {
-      size_ = offset_;
-      resize(size_);
-    }
-    SL_TRACE(logger_, "Memory reset; memory ptr: {}", fmt::ptr(memory_));
   }
 
   WasmSize WasmMemoryImpl::size() const {
@@ -285,7 +270,7 @@ namespace kagome::runtime::binaryen {
       return 0;
     }
     storeBuffer(wasm_pointer, value);
-    return WasmResult(wasm_pointer, value.size()).combine();
+    return PtrSize(wasm_pointer, value.size()).combine();
   }
 
   boost::optional<WasmSize> WasmMemoryImpl::getDeallocatedChunkSize(

@@ -18,7 +18,7 @@
 #include "common/literals.hpp"
 #include "log/logger.hpp"
 #include "primitives/math.hpp"
-#include "runtime/wasm_memory.hpp"
+#include "runtime/memory.hpp"
 
 namespace kagome::runtime::binaryen {
 
@@ -54,18 +54,15 @@ namespace kagome::runtime::binaryen {
    * @note Memory size of this implementation is at least of the size of one
    * wasm page (4096 bytes)
    */
-  class WasmMemoryImpl final : public WasmMemory {
+  class WasmMemoryImpl final : public Memory {
    public:
-    explicit WasmMemoryImpl(wasm::ShellExternalInterface::Memory *memory);
+    WasmMemoryImpl(wasm::ShellExternalInterface::Memory *memory,
+                            WasmSize heap_base);
     WasmMemoryImpl(const WasmMemoryImpl &copy) = delete;
     WasmMemoryImpl &operator=(const WasmMemoryImpl &copy) = delete;
     WasmMemoryImpl(WasmMemoryImpl &&move) = delete;
     WasmMemoryImpl &operator=(WasmMemoryImpl &&move) = delete;
     ~WasmMemoryImpl() override = default;
-
-    void setHeapBase(WasmSize initial_offset) override;
-
-    void reset() override;
 
     WasmSize size() const override;
     void resize(WasmSize newSize) override;

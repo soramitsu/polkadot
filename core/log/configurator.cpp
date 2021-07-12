@@ -55,10 +55,12 @@ groups:
                   - name: voting_round
           - name: runtime
             children:
-              - name: wasm
-                level: info
-              - name: extentions
-              - name: binatien
+              - name: runtime_api
+                level: trace
+              - name: host_api
+                level: trace
+              - name: binaryen
+                level: trace
           - name: metrics
           - name: network
             children:

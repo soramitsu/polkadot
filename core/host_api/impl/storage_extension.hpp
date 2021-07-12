@@ -9,9 +9,13 @@
 #include <cstdint>
 
 #include "log/logger.hpp"
-#include "runtime/trie_storage_provider.hpp"
-#include "runtime/wasm_memory.hpp"
+#include "runtime/types.hpp"
 #include "storage/changes_trie/changes_tracker.hpp"
+
+namespace kagome::runtime {
+  class MemoryProvider;
+  class TrieStorageProvider;
+}
 
 namespace kagome::host_api {
   /**
@@ -21,47 +25,12 @@ namespace kagome::host_api {
    public:
     StorageExtension(
         std::shared_ptr<runtime::TrieStorageProvider> storage_provider,
-        std::shared_ptr<runtime::WasmMemory> memory,
+        std::shared_ptr<const runtime::MemoryProvider> memory_provider,
         std::shared_ptr<storage::changes_trie::ChangesTracker> changes_tracker);
 
     void reset();
 
-    // -------------------------Data storage--------------------------
-
-    /**
-     * @see Extension::ext_clear_prefix
-     */
-    void ext_clear_prefix(runtime::WasmPointer prefix_data,
-                          runtime::WasmSize prefix_length);
-
-    /**
-     * @see Extension::ext_clear_storage
-     */
-    void ext_clear_storage(runtime::WasmPointer key_data,
-                           runtime::WasmSize key_length);
-
-    /**
-     * @see Extension::ext_exists_storage
-     */
-    runtime::WasmSize ext_exists_storage(runtime::WasmPointer key_data,
-                                         runtime::WasmSize key_length) const;
-
-    /**
-     * @see Extension::ext_get_allocated_storage
-     */
-    runtime::WasmPointer ext_get_allocated_storage(
-        runtime::WasmPointer key_data,
-        runtime::WasmSize key_length,
-        runtime::WasmPointer len_ptr);
-
-    /**
-     * @see Extension::ext_get_storage_into
-     */
-    runtime::WasmSize ext_get_storage_into(runtime::WasmPointer key_data,
-                                           runtime::WasmSize key_length,
-                                           runtime::WasmPointer value_data,
-                                           runtime::WasmSize value_length,
-                                           runtime::WasmSize value_offset);
+    // -------------------------Trie operations--------------------------
 
     /**
      * @see Extension::ext_storage_read_version_1
@@ -69,52 +38,6 @@ namespace kagome::host_api {
     runtime::WasmSpan ext_storage_read_version_1(runtime::WasmSpan key,
                                                  runtime::WasmSpan value_out,
                                                  runtime::WasmOffset offset);
-
-    /**
-     * @see Extension::ext_set_storage
-     */
-    void ext_set_storage(runtime::WasmPointer key_data,
-                         runtime::WasmSize key_length,
-                         runtime::WasmPointer value_data,
-                         runtime::WasmSize value_length);
-
-    // -------------------------Trie operations--------------------------
-
-    /**
-     * @see Extension::ext_blake2_256_enumerated_trie_root
-     */
-    void ext_blake2_256_enumerated_trie_root(runtime::WasmPointer values_data,
-                                             runtime::WasmPointer lengths_data,
-                                             runtime::WasmSize values_num,
-                                             runtime::WasmPointer result);
-
-    /**
-     * @see Extension::ext_storage_changes_root
-     */
-    runtime::WasmPointer ext_storage_changes_root(
-        runtime::WasmPointer parent_hash, runtime::WasmPointer result);
-
-    /**
-     * @see Extension::ext_storage_root
-     */
-    void ext_storage_root(runtime::WasmPointer result) const;
-
-    // ------------------------Transaction operations--------------------------
-
-    /**
-     * @see Extension::ext_storage_start_transaction
-     */
-    void ext_storage_start_transaction();
-
-    /**
-     * @see Extension::ext_storage_rollback_transaction
-     */
-    void ext_storage_rollback_transaction();
-
-    /**
-     * @see Extension::ext_storage_commit_transaction
-     */
-    void ext_storage_commit_transaction();
 
     // ------------------------ VERSION 1 ------------------------
 
@@ -216,7 +139,7 @@ namespace kagome::host_api {
         common::Hash256 parent) const;
 
     std::shared_ptr<runtime::TrieStorageProvider> storage_provider_;
-    std::shared_ptr<runtime::WasmMemory> memory_;
+    std::shared_ptr<const runtime::MemoryProvider> memory_provider_;
     std::shared_ptr<storage::changes_trie::ChangesTracker> changes_tracker_;
     log::Logger logger_;
 

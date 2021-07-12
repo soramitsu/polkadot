@@ -19,9 +19,9 @@
 #include "runtime/binaryen/runtime_environment_factory_impl.hpp"
 #include "runtime/binaryen/runtime_external_interface.hpp"
 #include "runtime/binaryen/wasm_executor.hpp"
-#include "runtime/wasm_memory.hpp"
-#include "runtime/wasm_provider.hpp"
-#include "runtime/wasm_result.hpp"
+#include "runtime/memory.hpp"
+#include "runtime/ptr_size.hpp"
+#include "runtime/runtime_code_provider.hpp"
 #include "scale/scale.hpp"
 
 namespace kagome::runtime::binaryen {
@@ -102,7 +102,7 @@ namespace kagome::runtime::binaryen {
     outcome::result<R> executeAt(std::string_view name,
                                  const storage::trie::RootHash &state_root,
                                  CallConfig config,
-                                 Args &&... args) {
+                                 Args &&...args) {
       return executeInternal<R>(
           name, state_root, std::move(config), std::forward<Args>(args)...);
     }
@@ -120,7 +120,7 @@ namespace kagome::runtime::binaryen {
     template <typename R, typename... Args>
     outcome::result<R> execute(std::string_view name,
                                CallConfig config,
-                               Args &&... args) {
+                               Args &&...args) {
       return executeInternal<R>(
           name, boost::none, std::move(config), std::forward<Args>(args)...);
     }
@@ -137,20 +137,18 @@ namespace kagome::runtime::binaryen {
         std::string_view name,
         boost::optional<storage::trie::RootHash> state_root,
         CallConfig config,
-        Args &&... args) {
+        Args &&...args) {
       SL_DEBUG(logger_, "Executing export function: {}", name);
       if (state_root.has_value()) {
         SL_DEBUG(logger_, "Resetting state to: {}", state_root.value().toHex());
       }
 
-      auto &&[module_instance, memory, opt_batch] =
+      auto &&[module_instance, memory, rei, opt_batch] =
           createRuntimeEnvironment(config, state_root);
 
-      gsl::final_action dispose(
-          [memory = memory, module_instance = module_instance] {
-            memory->reset();
-            module_instance->reset();
-          });
+      gsl::final_action dispose([rei = rei] {
+        rei->reset();
+      });
 
       runtime::WasmPointer ptr = 0u;
       runtime::WasmSize len = 0u;
@@ -158,8 +156,8 @@ namespace kagome::runtime::binaryen {
       if constexpr (sizeof...(args) > 0) {
         OUTCOME_TRY(buffer, scale::encode(std::forward<Args>(args)...));
         len = buffer.size();
-        ptr = memory->allocate(len);
-        memory->storeBuffer(ptr, common::Buffer(std::move(buffer)));
+        ptr = memory.allocate(len);
+        memory.storeBuffer(ptr, common::Buffer(std::move(buffer)));
       }
 
       wasm::LiteralList ll{wasm::Literal(ptr), wasm::Literal(len)};
@@ -169,8 +167,8 @@ namespace kagome::runtime::binaryen {
       OUTCOME_TRY(res, executor_.call(*module_instance, wasm_name, ll));
 
       if constexpr (!std::is_same_v<void, R>) {
-        WasmResult r(res.geti64());
-        auto buffer = memory->loadN(r.address, r.length);
+        PtrSize r(res.geti64());
+        auto buffer = memory.loadN(r.ptr, r.size);
         return scale::decode<R>(std::move(buffer));
       }
 
