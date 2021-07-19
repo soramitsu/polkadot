@@ -383,9 +383,9 @@ namespace kagome::blockchain {
     BOOST_ASSERT(babe_util_ != nullptr);
     // initialize metrics
     registry_->registerGaugeFamily(kBlockHeightGaugeName,
-                                     "Block height info of the chain");
+                                   "Block height info of the chain");
     block_height_best_ = registry_->registerGaugeMetric(kBlockHeightGaugeName,
-                                                          {{"status", "best"}});
+                                                        {{"status", "best"}});
     block_height_best_->set(tree_meta_->deepest_leaf.get().depth);
     block_height_finalized_ = registry_->registerGaugeMetric(
         kBlockHeightGaugeName, {{"status", "finalized"}});
@@ -482,6 +482,14 @@ namespace kagome::blockchain {
             key.value(),
             primitives::events::ExtrinsicLifecycleEvent::InBlock(
                 key.value(), std::move(block_hash)));
+        SL_DEBUG(log_,
+                 "Extrinsic 0x{} placed in block at 0x{}",
+                 block.body[idx].data.toHex(),
+                 block_hash.toHex());
+      } else {
+        SL_DEBUG(log_,
+                 "Extrinsic 0x{} has no extrinsic event keys",
+                 block.body[idx].data.toHex());
       }
     }
 
@@ -587,6 +595,12 @@ namespace kagome::blockchain {
             key.value(),
             primitives::events::ExtrinsicLifecycleEvent::Finalized(
                 key.value(), std::move(block_hash)));
+        SL_DEBUG(log_, "Extrinsic 0x{} finalized at 0x{}",
+                 body[idx].data.toHex(),
+                 block_hash.toHex());
+      } else {
+        SL_DEBUG(log_, "Extrinsic 0x{} has no extrinsic event keys",
+                 body[idx].data.toHex());
       }
     }
 

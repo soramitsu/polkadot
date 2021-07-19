@@ -212,9 +212,15 @@ namespace kagome::host_api {
                  msg.toHex(),
                  pubkey.toHex());
         if(res.has_error()) {
-          SL_DEBUG(self->logger_, "Error: {}", res.error().message());
+          SL_WARN(self->logger_, "Error: {}", res.error().message());
         }
       }
+      SL_DEBUG(self->logger_,
+               "SR25519 signature verification. Signature is "
+               "{}. Message is {}. Public key is {}.",
+               signature.toHex(),
+               msg.toHex(),
+               pubkey.toHex());
       return is_succeeded ? kLegacyVerifySuccess : kLegacyVerifyFail;
     };
     if (batch_verify_.has_value()) {

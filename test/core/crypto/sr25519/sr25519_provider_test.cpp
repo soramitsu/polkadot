@@ -12,6 +12,7 @@
 
 using kagome::crypto::BoostRandomGenerator;
 using kagome::crypto::CSPRNG;
+using kagome::crypto::Sr25519Keypair;
 using kagome::crypto::Sr25519Provider;
 using kagome::crypto::Sr25519ProviderImpl;
 using kagome::crypto::Sr25519PublicKey;
@@ -111,9 +112,30 @@ TEST_F(Sr25519ProviderTest, VerifyWrongKeyFail) {
   ASSERT_FALSE(ver_res);
 }
 
+TEST_F(Sr25519ProviderTest, VerifyWrongKeyFail2) {
+  // ```
+  // docker run --rm parity/polkadot:v0.9.1 key inspect "bottom drive obey lake
+  // curtain smoke basket hold race lonely fit walk//Alice//stash"
+  // ```
+  auto buf = kagome::common::Buffer::fromHex(
+      "050300"
+                 "fe65717dad0447d715f660a0a58411de509b42e6efb8375f562f58a554d5860"
+                 "e070010a5d4e"
+                 "805030800"
+                 "7823000007000000e"
+      "7aa1d1c9da71aa4bd835eaf5bab7b0245158f3141b320353628239411888695"
+      "b822ebdae7644d6a79ee9df2164de62eb86335ce6e2748938057357ca657efd"
+                 "7").value();
+  auto kp = sr25519_provider->generateKeypair(Sr25519Seed::fromHexWithPrefix("0x3c881bc4d45926680c64a7f9315eeda3dd287f8d598f3653d7c107799c5422b3").value());
+  std::cout << kp.public_key.toHex() << std::endl;
+  auto sign = sr25519_provider->sign(kp, gsl::make_span(buf.data(), buf.size()));
+  std::cout << sign.value().toHex() << std::endl;
+  auto val = sr25519_provider->verify(sign.value(), gsl::make_span(buf.data(), buf.size()), kp.public_key);
+  std::cout << val.value() << std::endl;
+}
 /**
- * Don't try to verify a message and signature against an invalid key, this may
- * lead to program termination
+ * Don't try to verify a message and signature against an invalid key, this
+ * may lead to program termination
  *
  * @given sr25519 provider instance configured with boost random generator
  * @and and a predefined message

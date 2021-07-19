@@ -5,7 +5,7 @@ from substrateinterface.exceptions import SubstrateRequestException
 
 
 def main():
-    url = "http://" + sys.argv[1]
+    url = "ws://" + sys.argv[1]
 
     substrate = SubstrateInterface(
         url=url,
@@ -26,7 +26,7 @@ def main():
     extrinsic = substrate.create_signed_extrinsic(call=call, keypair=keypair)
 
     try:
-        result = substrate.submit_extrinsic(extrinsic, wait_for_inclusion=False)
+        result = substrate.submit_extrinsic(extrinsic, wait_for_inclusion=True, wait_for_finalization=False)
         print("Extrinsic '{}' sent".format(result['extrinsic_hash']))
 
     except SubstrateRequestException as e:

@@ -470,12 +470,14 @@ namespace kagome::api {
     // TODO(kamilsa): remove that string replacement when
     // https://github.com/soramitsu/kagome/issues/572 resolved
     std::string str_request(request);
+    SL_TRACE(logger_, "Request: {}", str_request);
     boost::replace_all(str_request, " ", "");
     boost::replace_first(str_request, "\"params\":null", "\"params\":[null]");
 
     // process new request
     server_->processData(str_request, [&](const std::string &response) mutable {
       // process response
+      SL_TRACE(logger_, "{}", response.substr(0, 4096));
       session->respond(response);
     });
 
@@ -485,6 +487,7 @@ namespace kagome::api {
           for (auto &msg : *session_context.messages) {
             BOOST_ASSERT(msg);
             session->respond(*msg);
+            SL_TRACE(logger_, "{}", (*msg).substr(0, 4096));
           }
 
         session_context.messages.reset();

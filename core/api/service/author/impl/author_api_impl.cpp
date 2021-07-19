@@ -168,6 +168,7 @@ namespace kagome::api {
     SubscriptionId sub_id{};
     if (auto service = api_service_.lock()) {
       OUTCOME_TRY(sub_id_, service->subscribeForExtrinsicLifecycle(tx));
+      SL_DEBUG(logger_, "Subscribe for ex 0x{}", tx.ext.data.toHex());
       sub_id = sub_id_;
     } else {
       throw jsonrpc::InternalErrorFault(

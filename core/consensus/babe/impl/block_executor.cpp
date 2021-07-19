@@ -354,16 +354,18 @@ namespace kagome::consensus {
           b.justification.value()));
     }
 
-    // remove block's extrinsics from tx pool
-    for (const auto &extrinsic : block.body) {
-      auto res = tx_pool_->removeOne(hasher_->blake2b_256(extrinsic.data));
-      if (res.has_error()
-          && res
-                 != outcome::failure(
-                     transaction_pool::TransactionPoolError::TX_NOT_FOUND)) {
-        return res.as_failure();
-      }
-    }
+    /*
+     * // remove block's extrinsics from tx pool
+     * for (const auto &extrinsic : block.body) {
+     *   auto res = tx_pool_->removeOne(hasher_->blake2b_256(extrinsic.data));
+     *   if (res.has_error()
+     *       && res
+     *              != outcome::failure(
+     *                  transaction_pool::TransactionPoolError::TX_NOT_FOUND)) {
+     *     return res.as_failure();
+     *   }
+     * }
+     */
 
     auto t_end = std::chrono::high_resolution_clock::now();
 

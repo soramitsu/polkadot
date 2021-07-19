@@ -31,3 +31,13 @@ hunter_config(
     KEEP_PACKAGE_SOURCES
 )
 
+# hunter_config(
+#     binaryen
+#     VERSION release-101
+#     URL "https://github.com/WebAssembly/binaryen/archive/refs/tags/version_101.tar.gz"
+#     SHA1 3817856cf47413af916d6da1548ec2a0b11c6b56
+#     CMAKE_ARGS
+#         BUILD_LLVM_DWARF=OFF
+#         BUILD_STATIC_LIB=ON
+#         ENABLE_WERROR=OFF
+#   )

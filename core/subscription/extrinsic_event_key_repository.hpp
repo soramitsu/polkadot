@@ -19,7 +19,7 @@ namespace kagome::subscription {
                                      + sizeof(primitives::ExtrinsicIndex)>;
 
     ExtrinsicEventKeyRepository()
-        : logger_{log::createLogger("ExtrinsicEventKeyRepo", "pubsub")} {}
+        : logger_{log::createLogger("ExtrinsicEventKeyRepo", "transactions")} {}
 
     ExtrinsicKey subscribeTransaction(const TransactionId &tx_id) noexcept {
       tx_to_key_[tx_id] = ++last_key_;
