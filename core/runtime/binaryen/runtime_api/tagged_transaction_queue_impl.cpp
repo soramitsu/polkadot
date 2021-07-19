@@ -11,14 +11,24 @@ namespace kagome::runtime::binaryen {
   TaggedTransactionQueueImpl::TaggedTransactionQueueImpl(
       const std::shared_ptr<RuntimeEnvironmentFactory> &runtime_env_factory)
       : RuntimeApi(runtime_env_factory),
-        logger_{log::createLogger("TaggedTransactionQueue", "binarien")} {}
+        logger_{log::createLogger("TaggedTransactionQueue", "binarien")} {
+  }
+
+  void TaggedTransactionQueueImpl::setBlockTree(
+      std::shared_ptr<blockchain::BlockTree> block_tree) {
+    block_tree_ = std::move(block_tree);
+  }
 
   outcome::result<primitives::TransactionValidity>
   TaggedTransactionQueueImpl::validate_transaction(
       primitives::TransactionSource source, const primitives::Extrinsic &ext) {
+    BOOST_ASSERT(block_tree_);
+    auto hash = block_tree_->deepestLeaf().hash;
+    OUTCOME_TRY(best_header, block_tree_->getBlockHeader(hash));
     logger_->trace("{}", ext.data.toHex());
-    return execute<TransactionValidity>(
+    return executeAt<TransactionValidity>(
         "TaggedTransactionQueue_validate_transaction",
+        best_header.state_root,
         CallConfig{.persistency = CallPersistency::EPHEMERAL},
         source,
         ext,
